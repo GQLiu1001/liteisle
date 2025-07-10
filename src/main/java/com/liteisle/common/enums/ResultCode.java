@@ -7,14 +7,15 @@ import lombok.Getter;
 @Getter
 public enum ResultCode {
 
-    SUCCESS(200, "成功"),
-    FAIL(400, "失败"),
-    UNAUTHORIZED(401, "未授权");
+    SUCCESS(200, "操作成功"),
+    FAIL(500, "操作失败"),
+    UNAUTHORIZED(401, "未授权"),
+    FORBIDDEN(403, "禁止访问"),
+    NOT_FOUND(404, "资源不存在"),
+    VALIDATE_FAILED(400, "参数校验失败"),
+    SERVER_ERROR(500, "服务器内部错误");
 
-    // 获取 code
-    private final int code;
-    // 获取 message
+    private final Integer code;
     private final String message;
-
 
 }

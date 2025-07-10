@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 /**
 * @author 11965
 * @description 针对表【share_links(管理公开分享链接)】的数据库操作Service实现
-* @createDate 2025-07-10 09:31:28
+* @createDate 2025-07-10 20:09:48
 */
 @Service
 public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLinks>

@@ -5,8 +5,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
 * @author 11965
-* @description 针对表【user_islands(记录用户已解锁的岛屿)】的数据库操作Service
-* @createDate 2025-07-10 09:31:28
+* @description 针对表【user_islands(记录用户已解锁的岛屿表)】的数据库操作Service
+* @createDate 2025-07-10 20:09:48
 */
 public interface UserIslandsService extends IService<UserIslands> {
 

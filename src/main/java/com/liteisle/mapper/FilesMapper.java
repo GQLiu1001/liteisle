@@ -5,9 +5,9 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
 * @author 11965
-* @description 针对表【files(文件元数据及处理状态)】的数据库操作Mapper
-* @createDate 2025-07-10 09:31:28
-* @Entity com.liteisle.domain.Files
+* @description 针对表【files(文件通用基础信息表)】的数据库操作Mapper
+* @createDate 2025-07-10 20:09:48
+* @Entity com.liteisle.common.domain.Files
 */
 public interface FilesMapper extends BaseMapper<Files> {
 

@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 
 /**
 * @author 11965
-* @description 针对表【folders(逻辑文件夹，统一管理歌单、文档分类等)】的数据库操作Service实现
-* @createDate 2025-07-10 09:31:28
+* @description 针对表【folders(用户逻辑文件夹结构表)】的数据库操作Service实现
+* @createDate 2025-07-10 20:09:48
 */
 @Service
 public class FoldersServiceImpl extends ServiceImpl<FoldersMapper, Folders>
