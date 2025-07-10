@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.liteisle.mapper.FilesMapper">
+
+    <resultMap id="BaseResultMap" type="com.liteisle.common.domain.Files">
+            <id property="id" column="id" />
+            <result property="userId" column="user_id" />
+            <result property="folderId" column="folder_id" />
+            <result property="storageId" column="storage_id" />
+            <result property="name" column="name" />
+            <result property="extension" column="extension" />
+            <result property="fileType" column="file_type" />
+            <result property="status" column="status" />
+            <result property="tempStoragePath" column="temp_storage_path" />
+            <result property="errorMessage" column="error_message" />
+            <result property="sortedOrder" column="sorted_order" />
+            <result property="deleteTime" column="delete_time" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+            <result property="artist" column="artist" />
+            <result property="album" column="album" />
+            <result property="duration" column="duration" />
+            <result property="coverArtUrl" column="cover_art_url" />
+            <result property="content" column="content" />
+            <result property="version" column="version" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,folder_id,storage_id,name,extension,
+        file_type,status,temp_storage_path,error_message,sorted_order,
+        delete_time,create_time,update_time,artist,album,
+        duration,cover_art_url,content,version
+    </sql>
+</mapper>

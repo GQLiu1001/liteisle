@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.liteisle.mapper.StoragesMapper">
+
+    <resultMap id="BaseResultMap" type="com.liteisle.common.domain.Storages">
+            <id property="id" column="id" />
+            <result property="fileHash" column="file_hash" />
+            <result property="fileSize" column="file_size" />
+            <result property="mimeType" column="mime_type" />
+            <result property="storagePath" column="storage_path" />
+            <result property="referenceCount" column="reference_count" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,file_hash,file_size,mime_type,storage_path,reference_count,
+        create_time,update_time
+    </sql>
+</mapper>

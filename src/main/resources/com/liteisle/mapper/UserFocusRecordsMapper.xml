@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.liteisle.mapper.UserFocusRecordsMapper">
+
+    <resultMap id="BaseResultMap" type="com.liteisle.common.domain.UserFocusRecords">
+            <id property="id" column="id" />
+            <result property="userId" column="user_id" />
+            <result property="focusMinutes" column="focus_minutes" />
+            <result property="createTime" column="create_time" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,focus_minutes,create_time
+    </sql>
+</mapper>

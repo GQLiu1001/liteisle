@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.liteisle.mapper.FoldersMapper">
+
+    <resultMap id="BaseResultMap" type="com.liteisle.common.domain.Folders">
+            <id property="id" column="id" />
+            <result property="userId" column="user_id" />
+            <result property="parentId" column="parent_id" />
+            <result property="name" column="name" />
+            <result property="folderType" column="folder_type" />
+            <result property="sortedOrder" column="sorted_order" />
+            <result property="deleteTime" column="delete_time" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,parent_id,name,folder_type,sorted_order,
+        delete_time,create_time,update_time
+    </sql>
+</mapper>
