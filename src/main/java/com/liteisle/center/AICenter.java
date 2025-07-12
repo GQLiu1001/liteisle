@@ -1,4 +1,4 @@
-package com.liteisle.config;
+package com.liteisle.center;
 
 import com.alibaba.cloud.ai.memory.jdbc.MysqlChatMemoryRepository;
 import com.liteisle.utils.AITools;
@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 @Configuration
-public class AIConfig {
+public class AICenter {
 
     // 2. 不再注入具体的 Function，而是注入整个 AITools 服务
     @Resource
