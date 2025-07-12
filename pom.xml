@@ -28,17 +28,35 @@
     </scm>
     <properties>
         <java.version>21</java.version>
-        <aws-java-sdk-s3>1.12.550</aws-java-sdk-s3>
         <springdoc-openapi-starter-webmvc-ui>2.6.0</springdoc-openapi-starter-webmvc-ui>
         <java-jwt>4.5.0</java-jwt>
         <jakarta.mail>2.0.1</jakarta.mail>
         <mybatis-plus-spring-boot3-starter>3.5.12</mybatis-plus-spring-boot3-starter>
+        <springai-alibaba>1.0.0.2</springai-alibaba>
+        <minio>8.5.17</minio>
     </properties>
     <dependencies>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-s3</artifactId>
-            <version>${aws-java-sdk-s3}</version>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-starter-memory-jdbc</artifactId>
+            <version>${springai-alibaba}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
+            <version>${springai-alibaba}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-bom</artifactId>
+            <version>${springai-alibaba}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>${minio}</version>
         </dependency>
         <dependency>
             <groupId>com.auth0</groupId>
