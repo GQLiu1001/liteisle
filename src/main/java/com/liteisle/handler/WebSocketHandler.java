@@ -1,7 +1,8 @@
 package com.liteisle.handler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liteisle.util.UserContextHolder; // 假设你有类似工具
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -12,92 +13,71 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
+@Component // 关键点1：让 Spring 管理这个 Handler
 public class WebSocketHandler extends TextWebSocketHandler {
 
-    private static final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    // 用于存储所有已连接的客户端 <UserId, Session>
+    private static final Map<Long, WebSocketSession> SESSIONS = new ConcurrentHashMap<>();
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        sessions.put(session.getId(), session);
-        log.info("WebSocket连接建立: {}", session.getId());
+        // 从 session 的 attributes 中获取用户ID（这个ID是在握手拦截器中放入的）
+        Long userId = (Long) session.getAttributes().get("userId");
+        if (userId != null) {
+            SESSIONS.put(userId, session);
+            log.info("WebSocket 连接成功, userId: {}, 当前在线人数: {}", userId, SESSIONS.size());
+        } else {
+            // 如果没有 userId，说明握手拦截器验证失败，直接关闭连接
+            session.close(CloseStatus.POLICY_VIOLATION.withReason("用户未认证"));
+            log.warn("检测到未认证的 WebSocket 尝试连接，已关闭。");
+        }
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        sessions.remove(session.getId());
-        log.info("WebSocket连接关闭: {}", session.getId());
+        Long userId = (Long) session.getAttributes().get("userId");
+        if (userId != null) {
+            SESSIONS.remove(userId);
+            log.info("WebSocket 连接断开, userId: {}, 当前在线人数: {}", userId, SESSIONS.size());
+        }
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        log.info("收到WebSocket消息: {}", message.getPayload());
-        // 这里可以处理客户端发送的消息
+        // 你的文档目前没有定义 C2S (客户端到服务端) 的消息
+        // 这里可以处理心跳包等逻辑，例如客户端定时发送 "ping"
+        log.info("收到来自 userId: {} 的消息: {}", session.getAttributes().get("userId"), message.getPayload());
+    }
+
+    @Override
+    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+        log.error("WebSocket 传输错误, userId: {}, 错误信息: {}", session.getAttributes().get("userId"), exception.getMessage());
+        if (session.isOpen()) {
+            session.close();
+        }
+        // 从 map 中移除
+        Long userId = (Long) session.getAttributes().get("userId");
+        if (userId != null) {
+            SESSIONS.remove(userId);
+        }
     }
 
     /**
-     * 广播消息给所有连接的客户端
+     * 关键点2：提供一个静态或Bean方法，供其他服务调用，向指定用户发送消息
+     * @param userId 用户ID
+     * @param payload JSON 格式的消息体字符串
      */
-    public static void broadcast(String event, Object payload) {
-        WebSocketMessage message = new WebSocketMessage(event, payload);
-        ObjectMapper mapper = new ObjectMapper();
-        
-        sessions.values().forEach(session -> {
-            try {
-                if (session.isOpen()) {
-                    String jsonMessage = mapper.writeValueAsString(message);
-                    session.sendMessage(new TextMessage(jsonMessage));
-                }
-            } catch (IOException e) {
-                log.error("发送WebSocket消息失败", e);
-            }
-        });
-    }
-
-    /**
-     * 发送消息给指定会话
-     */
-    public static void sendToSession(String sessionId, String event, Object payload) {
-        WebSocketSession session = sessions.get(sessionId);
+    public void sendMessageToUser(Long userId, String payload) {
+        WebSocketSession session = SESSIONS.get(userId);
         if (session != null && session.isOpen()) {
-            WebSocketMessage message = new WebSocketMessage(event, payload);
-            ObjectMapper mapper = new ObjectMapper();
-            
             try {
-                String jsonMessage = mapper.writeValueAsString(message);
-                session.sendMessage(new TextMessage(jsonMessage));
+                session.sendMessage(new TextMessage(payload));
+                log.info("成功向 userId: {} 发送消息: {}", userId, payload);
             } catch (IOException e) {
-                log.error("发送WebSocket消息失败", e);
+                log.error("向 userId: {} 发送消息失败: {}", userId, e.getMessage());
             }
-        }
-    }
-
-    /**
-     * WebSocket消息格式
-     */
-    public static class WebSocketMessage {
-        private String event;
-        private Object payload;
-
-        public WebSocketMessage(String event, Object payload) {
-            this.event = event;
-            this.payload = payload;
-        }
-
-        public String getEvent() {
-            return event;
-        }
-
-        public void setEvent(String event) {
-            this.event = event;
-        }
-
-        public Object getPayload() {
-            return payload;
-        }
-
-        public void setPayload(Object payload) {
-            this.payload = payload;
+        } else {
+            log.warn("尝试向 userId: {} 发送消息，但用户不在线或 session 已关闭。", userId);
         }
     }
 }
