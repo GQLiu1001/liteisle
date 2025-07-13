@@ -1,4 +1,4 @@
-package com.liteisle.utils;
+package com.liteisle.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class FFmpegUtils {
+public class FFmpegUtil {
 
     private final FFmpegConfig ffmpegConfig;
     private final ObjectMapper objectMapper; // Spring Boot 自动配置了 ObjectMapper

@@ -1,4 +1,4 @@
-package com.liteisle.utils;
+package com.liteisle.util;
 
 import com.liteisle.config.MinioConfig;
 import io.minio.*;
@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class MinioUtils {
+public class MinioUtil {
 
     private final MinioClient minioClient;
     private final MinioConfig minioConfig;

@@ -1,7 +1,7 @@
-package com.liteisle.utils;
+package com.liteisle.util;
 
 import org.springframework.stereotype.Component;
 
 @Component
-public class AITools {
+public class AITool {
 }
