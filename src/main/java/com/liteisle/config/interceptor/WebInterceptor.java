@@ -19,23 +19,18 @@ public class WebInterceptor extends AbstractAuthInterceptor{
     @Override
     protected boolean doAuth(String token, HttpServletRequest request) {
         if (!jwtUtil.validateToken(token)) {
-            log.warn("Invalid token: {}", token);
-            return false;
-        }
-
-        // 建议添加对令牌是否过期的检查
-        if (jwtUtil.isTokenExpired(token)) {
-            log.warn("Expired token: {}", token);
+            log.warn("令牌无效或已在黑名单中: {}", token);
             return false;
         }
 
         Long userId = jwtUtil.getUserIdFromToken(token);
         if (userId == null) {
-            log.warn("User ID is missing in token");
+            log.warn("无法从有效令牌中解析出User ID");
             return false;
         }
 
         UserContextHolder.setUserId(userId);
+        UserContextHolder.setUserToken(token);
         return true;
     }
 }

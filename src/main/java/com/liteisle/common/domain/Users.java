@@ -5,7 +5,10 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 用户账户与基本信息表
@@ -13,6 +16,8 @@ import lombok.Data;
  */
 @TableName(value ="users")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Users {
     /**
      * 用户唯一标识ID (主键)

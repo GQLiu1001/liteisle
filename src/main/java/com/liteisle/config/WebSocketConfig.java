@@ -15,4 +15,5 @@ public class WebSocketConfig implements WebSocketConfigurer {
         registry.addHandler(new WebSocketHandler(), "/ws")
                 .setAllowedOrigins("*"); // 在生产环境中应该配置具体的域名
     }
+
 }

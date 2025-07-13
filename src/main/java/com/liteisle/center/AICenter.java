@@ -35,12 +35,12 @@ public class AICenter {
         return builder
                 .defaultSystem(
                         """
-
+                        hello
                         """
                 )
                 // 3. 使用 .defaultTools() 并传入整个服务实例。
                 // 框架会自动扫描 aiTools 对象中所有被 @Tool 注解的方法。
-                .defaultTools(aiTool)
+//                .defaultTools(aiTool)
                 .defaultAdvisors(
                         new SimpleLoggerAdvisor(),
                         MessageChatMemoryAdvisor.builder(chatMemory).build()

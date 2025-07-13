@@ -5,10 +5,13 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.liteisle.common.constant.RedisConstant;
 import com.liteisle.config.JwtConfig;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -28,9 +31,22 @@ public class JwtUtil {
     private Algorithm algorithm;
     private JWTVerifier verifier;
 
+    @Resource
+    private StringRedisTemplate redisTemplate;
+
     private static final String ISSUER = "liteisle";
     private static final String USERNAME_CLAIM = "username";
     private static final String USER_ID_CLAIM = "userId";
+
+    // 建议增加的私有方法
+    private DecodedJWT verifyAndDecode(String token) {
+        try {
+            return verifier.verify(token);
+        } catch (JWTVerificationException e) {
+            log.warn("JWT令牌验证或解码失败: {}", e.getMessage());
+            return null;
+        }
+    }
 
     // 初始化 Algorithm 和 JWTVerifier
     @PostConstruct
@@ -65,28 +81,11 @@ public class JwtUtil {
     public boolean validateToken(String token) {
         try {
             verifier.verify(token);
-            return true;
+            return !redisTemplate.hasKey(RedisConstant.BLACK_LIST_TOKEN + token);
         } catch (JWTVerificationException e) {
             // 提升日志级别为 WARN
             log.warn("JWT令牌验证失败: {}", e.getMessage());
             return false;
-        }
-    }
-
-    /**
-     * 从JWT令牌中获取用户名
-     *
-     * @param token JWT令牌
-     * @return 用户名
-     */
-    public String getUsernameFromToken(String token) {
-        try {
-            //对 JWT 的 payload 部分进行 Base64 解码并读取其中的声明（claims）
-            DecodedJWT decodedJWT = JWT.decode(token);
-            return decodedJWT.getClaim(USERNAME_CLAIM).asString();
-        } catch (Exception e) {
-            log.error("从JWT令牌中获取用户名失败: {}", e.getMessage());
-            return null;
         }
     }
 
@@ -98,12 +97,15 @@ public class JwtUtil {
      */
     public Long getUserIdFromToken(String token) {
         try {
-            DecodedJWT decodedJWT = JWT.decode(token);
-            return decodedJWT.getClaim(USER_ID_CLAIM).asLong();
+            DecodedJWT decodedJWT = verifyAndDecode(token);
+            if (decodedJWT != null) {
+                return decodedJWT.getClaim(USER_ID_CLAIM).asLong();
+            }
         } catch (Exception e) {
             log.error("从JWT令牌中获取用户ID失败: {}", e.getMessage());
             return null;
         }
+        return null;
     }
 
     /**
@@ -114,12 +116,15 @@ public class JwtUtil {
      */
     public Date getExpirationDateFromToken(String token) {
         try {
-            DecodedJWT decodedJWT = JWT.decode(token);
-            return decodedJWT.getExpiresAt();
+            DecodedJWT decodedJWT = verifyAndDecode(token);
+            if (decodedJWT != null) {
+                return decodedJWT.getExpiresAt();
+            }
         } catch (Exception e) {
             log.error("从JWT令牌中获取过期时间失败: {}", e.getMessage());
             return null;
         }
+        return null;
     }
 
     /**
