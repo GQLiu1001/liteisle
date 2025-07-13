@@ -34,8 +34,14 @@
         <mybatis-plus-spring-boot3-starter>3.5.12</mybatis-plus-spring-boot3-starter>
         <springai-alibaba>1.0.0.2</springai-alibaba>
         <minio>8.5.17</minio>
+        <redisson>3.23.0</redisson>
     </properties>
     <dependencies>
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-boot-starter</artifactId>
+            <version>${redisson}</version>
+        </dependency>
         <dependency>
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-starter-memory-jdbc</artifactId>

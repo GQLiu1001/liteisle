@@ -13,10 +13,10 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 public class WebSocketConfig implements WebSocketConfigurer {
 
     @Resource
-    private WebSocketHandler webSocketHandler; // 注入我们自己的 Handler
+    private WebSocketHandler webSocketHandler;
 
     @Resource
-    private WebSocketAuthInterceptor webSocketAuthInterceptor; // 注入我们的认证拦截器
+    private WebSocketAuthInterceptor webSocketAuthInterceptor;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
