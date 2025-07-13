@@ -24,18 +24,9 @@ public class JwtConfig {
     @Data
     public static class Expiration {
         /**
-         * 访问令牌过期时间（默认7天）
+         * 访问令牌过期时间（默认30天）
          */
-        private Duration accessToken = Duration.ofDays(7);
-        
-        /**
-         * 刷新令牌过期时间（默认30天）
-         */
-        private Duration refreshToken = Duration.ofDays(30);
-        
-        /**
-         * 匿名用户令牌过期时间（默认1天）
-         */
-        private Duration anonymous = Duration.ofDays(1);
+        private Duration accessToken = Duration.ofDays(30);
+
     }
 }
