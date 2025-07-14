@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.annotation.TableName;
 
 import java.math.BigDecimal;
 import java.util.Date;
+
+import com.liteisle.common.enums.FolderTypeEnum;
 import lombok.Data;
 
 /**
@@ -40,7 +42,7 @@ public class Folders {
     /**
      * 只有 system, playlist, notebook 三类。
      */
-    private Object folderType;
+    private FolderTypeEnum folderType;
 
     /**
      * 用于用户自定义排序的浮点数值

@@ -9,5 +9,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
 * @createDate 2025-07-10 20:09:48
 */
 public interface FoldersService extends IService<Folders> {
-
+    /**
+     * 创建用户默认文件夹
+     * @param userId
+     */
+    void createUserDefaultFolder(Long userId);
 }

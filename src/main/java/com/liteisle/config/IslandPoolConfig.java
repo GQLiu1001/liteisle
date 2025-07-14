@@ -2,10 +2,8 @@ package com.liteisle.config;
 
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
 @Configuration
 public class IslandPoolConfig {
@@ -38,10 +36,6 @@ public class IslandPoolConfig {
             Map.entry(25, "https://pub-061d1fd03ea74e68849f186c401fde40.r2.dev/%E5%B2%9B%E5%B1%BF25.png"),
             Map.entry(26, "https://pub-061d1fd03ea74e68849f186c401fde40.r2.dev/%E5%B2%9B%E5%B1%BF26.png")
     );
-
-    public Set<Integer> getAllIslandIds() {
-        return Collections.unmodifiableSet(ISLAND_URLS.keySet());
-    }
 
     private final Random random = new Random();
 

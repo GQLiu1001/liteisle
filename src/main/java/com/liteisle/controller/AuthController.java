@@ -110,9 +110,7 @@ public class AuthController {
     @Operation(summary = "退出登录", description = "用户退出登录")
     @PostMapping("/logout")
     public Result<Void> logout() {
-        Long userId = UserContextHolder.getUserId();
-        String token = UserContextHolder.getUserToken();
-        usersService.logout(userId,token);
+        usersService.logout();
         return Result.success();
     }
 }

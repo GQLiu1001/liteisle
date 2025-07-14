@@ -18,9 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 public interface UsersService extends IService<Users> {
     /**
      * 用户登录
-     * 验证用户名密码，通过返回jwt token
+     * 验证用户名密码，通过-》返回jwt token
      * @param req
-     * @return
      */
     AuthInfoResp login(AuthLoginReq req);
 
@@ -28,21 +27,45 @@ public interface UsersService extends IService<Users> {
      * 用户注册
      * 创建token返回相关信息时，创建默认文件夹！
      * @param req
-     * @return
      */
     AuthInfoResp register(AuthRegisterReq req);
 
+    /**
+     * 发送验证码
+     * @param email
+     */
     void sendVcode(String email);
 
+    /**
+     * 忘记密码
+     * @param req
+     */
     void forgotPassword(AuthForgotPasswordReq req);
 
+    /**
+     * 获取当前用户信息
+     */
     AuthCurrentUserResp getCurrentUser();
 
+    /**
+     * 修改当前用户密码
+     * @param req
+     */
     void resetPassword(AuthResetPasswordReq req);
 
+    /**
+     * 上传当前用户头像
+     * @param file
+     */
     String uploadPicture(MultipartFile file);
 
+    /**
+     * 重置当前用户头像为默认头像
+     */
     void resetPicture();
 
-    void logout(Long userId, String token);
+    /**
+     * 退出登录
+     */
+    void logout();
 }
