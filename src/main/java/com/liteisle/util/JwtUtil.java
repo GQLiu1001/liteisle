@@ -32,7 +32,7 @@ public class JwtUtil {
     private JWTVerifier verifier;
 
     @Resource
-    private StringRedisTemplate redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     private static final String ISSUER = "liteisle";
     private static final String USERNAME_CLAIM = "username";
@@ -81,7 +81,7 @@ public class JwtUtil {
     public boolean validateToken(String token) {
         try {
             verifier.verify(token);
-            return !redisTemplate.hasKey(RedisConstant.BLACK_LIST_TOKEN + token);
+            return !stringRedisTemplate.hasKey(RedisConstant.BLACK_LIST_TOKEN + token);
         } catch (JWTVerificationException e) {
             // 提升日志级别为 WARN
             log.warn("JWT令牌验证失败: {}", e.getMessage());

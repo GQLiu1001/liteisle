@@ -34,7 +34,7 @@
         <redisson>3.23.0</redisson>
         <springai-alibaba>1.0.0.2</springai-alibaba>
         <mybatis-plus-spring-boot3-starter>3.5.12</mybatis-plus-spring-boot3-starter>
-        <springdoc-openapi-starter-webmvc-ui>2.6.0</springdoc-openapi-starter-webmvc-ui>
+        <springdoc-openapi-starter-webmvc-ui>2.8.9</springdoc-openapi-starter-webmvc-ui>
     </properties>
     <dependencies>
         <dependency>
@@ -82,10 +82,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
