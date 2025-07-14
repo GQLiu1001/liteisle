@@ -1,8 +1,10 @@
 package com.liteisle.controller;
 
 import com.liteisle.common.Result;
+import com.liteisle.service.UserIslandsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,13 +14,17 @@ import java.util.List;
 @Tag(name = "岛屿接口")
 public class IslandController {
 
+    @Resource
+    private UserIslandsService userIslandsService;
+
     /**
      * 获取岛屿收藏页面数据
      */
     @Operation(summary = "获取岛屿收藏页面数据，返回用户所获得的岛屿url的String列表", description = "获取岛屿收藏页面数据")
     @GetMapping("/me")
     public Result<List<String>> getIslandCollection() {
-        return Result.success();
+        List<String> resp = userIslandsService.getIslandCollection();
+        return Result.success(resp);
     }
 
 }

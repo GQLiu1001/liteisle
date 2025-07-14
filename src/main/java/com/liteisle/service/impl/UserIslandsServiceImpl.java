@@ -1,10 +1,16 @@
 package com.liteisle.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.liteisle.common.domain.UserIslands;
 import com.liteisle.service.UserIslandsService;
 import com.liteisle.mapper.UserIslandsMapper;
+import com.liteisle.util.UserContextHolder;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
 * @author 11965
@@ -15,6 +21,18 @@ import org.springframework.stereotype.Service;
 public class UserIslandsServiceImpl extends ServiceImpl<UserIslandsMapper, UserIslands>
     implements UserIslandsService{
 
+    @Resource
+    private UserIslandsMapper userIslandsMapper;
+
+    @Override
+    public List<String> getIslandCollection() {
+        Long userId = UserContextHolder.getUserId();
+        List<String> resp = new ArrayList<>();
+        for (UserIslands island : this.list(new QueryWrapper<UserIslands>().eq("user_id", userId))) {
+            resp.add(island.getIslandUrl());
+        }
+        return resp;
+    }
 }
 
 
