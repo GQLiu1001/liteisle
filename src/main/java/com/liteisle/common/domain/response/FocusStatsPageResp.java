@@ -14,7 +14,7 @@ public class FocusStatsPageResp {
     
     @Data
     public static class FocusRecord {
-        private Long sessionId;        // 记录的ID
+        private Long id;        // 记录的ID
         private Integer focusMinutes;  // 专注时长（分钟）
         private Date createTime;
     }

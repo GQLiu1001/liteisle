@@ -5,7 +5,10 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 用户单次专注会话记录表
@@ -13,6 +16,8 @@ import lombok.Data;
  */
 @TableName(value ="user_focus_records")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserFocusRecords {
     /**
      * 专注记录唯一ID (主键)

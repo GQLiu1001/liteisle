@@ -1,7 +1,11 @@
 package com.liteisle.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.liteisle.common.domain.UserFocusRecords;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.liteisle.common.domain.response.FocusCalendarResp;
+import com.liteisle.common.domain.response.FocusStatsPageResp;
 
 /**
 * @author 11965
@@ -10,4 +14,21 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface UserFocusRecordsService extends IService<UserFocusRecords> {
 
+    /**
+     * 创建专注记录
+     * ！责任链概率片段是否获得岛屿
+     * @param min 专注时长
+     * @return 创建的专注记录id
+     */
+    String createFocusRecord(Integer min);
+
+    /**
+     * 获取专注总次数
+     * @return 总次数
+     */
+    Long getFocusTotalCount();
+
+    FocusCalendarResp getFocusCalendar(Integer year, Integer month);
+
+    IPage<FocusStatsPageResp.FocusRecord> getFocusRecords(Page<FocusStatsPageResp.FocusRecord> page);
 }

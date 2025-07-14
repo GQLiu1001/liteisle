@@ -14,4 +14,14 @@
     <sql id="Base_Column_List">
         id,user_id,focus_minutes,create_time
     </sql>
+    <select id="getTotalFocusMinutesInMonth" resultType="java.lang.Integer">
+        SELECT
+            IFNULL(SUM(focus_minutes), 0)
+        FROM
+            user_focus_records
+        WHERE
+            YEAR(create_time) = #{year}
+          AND MONTH(create_time) = #{month}
+          AND user_id = #{userId}
+    </select>
 </mapper>

@@ -1,7 +1,11 @@
 package com.liteisle.mapper;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.liteisle.common.domain.UserFocusRecords;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.liteisle.common.domain.response.FocusStatsPageResp;
+import org.apache.ibatis.annotations.Select;
 
 /**
 * @author 11965
@@ -11,6 +15,10 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 */
 public interface UserFocusRecordsMapper extends BaseMapper<UserFocusRecords> {
 
+    Integer getTotalFocusMinutesInMonth(Integer year, Integer month, Long userId);
+
+    @Select("SELECT * FROM user_focus_records WHERE user_id = #{userId} ORDER BY create_time DESC")
+    IPage<FocusStatsPageResp.FocusRecord> selectFocusRecordsPage(Page<FocusStatsPageResp.FocusRecord> page, Long userId);
 }
 
 

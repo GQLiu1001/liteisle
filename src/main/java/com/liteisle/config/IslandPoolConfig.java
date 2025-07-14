@@ -43,4 +43,14 @@ public class IslandPoolConfig {
         return random.nextInt(26) + 1;
     }
 
+    /**
+     * 接获取一个随机岛屿的URL。
+     * @return 一个随机岛屿的URL字符串。
+     */
+    public String getRandomIslandUrl() {
+        // 生成一个 1 到 26 (包含) 的随机ID
+        int randomId = random.nextInt(ISLAND_URLS.size()) + 1;
+        return ISLAND_URLS.get(randomId);
+    }
+
 }
