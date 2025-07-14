@@ -13,7 +13,7 @@ public class TranslateReq {
      */
     private String targetLang;
     /**
-     * 当前正在阅读或编辑的文件的ID。
+     * 当前正在阅读或编辑的文件的名字。
      */
-    private Long fileId;
+    private String fileName;
 }
