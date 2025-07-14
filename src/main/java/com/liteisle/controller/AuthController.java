@@ -1,6 +1,7 @@
 package com.liteisle.controller;
 
 import com.liteisle.common.Result;
+import com.liteisle.common.constant.SystemConstant;
 import com.liteisle.common.domain.request.AuthForgotPasswordReq;
 import com.liteisle.common.domain.request.AuthLoginReq;
 import com.liteisle.common.domain.request.AuthRegisterReq;
@@ -70,7 +71,7 @@ public class AuthController {
     @GetMapping("/me")
     public Result<AuthCurrentUserResp> getCurrentUser() {
         AuthCurrentUserResp resp = usersService.getCurrentUser();
-        return Result.success();
+        return Result.success(resp);
     }
 
     /**
@@ -90,7 +91,7 @@ public class AuthController {
     @PostMapping("/me/picture")
     public Result<String> uploadPicture(@RequestParam("file") MultipartFile file) {
         String url = usersService.uploadPicture(file);
-        return Result.success();
+        return Result.success(url);
     }
 
     /**
@@ -100,7 +101,7 @@ public class AuthController {
     @PutMapping("/me/reset-picture")
     public Result<String> resetPicture() {
         usersService.resetPicture();
-        return Result.success();
+        return Result.success(SystemConstant.USER_DEFAULT_URL);
     }
 
     /**

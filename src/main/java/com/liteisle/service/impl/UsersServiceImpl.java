@@ -13,6 +13,7 @@ import com.liteisle.common.domain.request.AuthResetPasswordReq;
 import com.liteisle.common.domain.response.AuthCurrentUserResp;
 import com.liteisle.common.domain.response.AuthInfoResp;
 import com.liteisle.common.exception.LiteisleException;
+import com.liteisle.service.FoldersService;
 import com.liteisle.service.UsersService;
 import com.liteisle.mapper.UsersMapper;
 import com.liteisle.util.CaptchaUtil;
@@ -46,6 +47,8 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
     private JwtUtil jwtUtil;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private FoldersService foldersService;
 
     @Override
     public AuthInfoResp login(AuthLoginReq req) {
@@ -91,6 +94,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         stringRedisTemplate.delete(RedisConstant.USER_EMAIL + req.getEmail());
         String token = jwtUtil.generateToken(user.getUsername(), user.getId());
         //TODO 创建默认用户文件夹
+        foldersService.createDefaultFolder(user.getId());
         return new AuthInfoResp(user.getUsername(), user.getEmail(), user.getAvatar(), token);
     }
 

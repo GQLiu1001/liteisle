@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+
+import java.math.BigDecimal;
 import java.util.Date;
 import lombok.Data;
 
@@ -58,7 +60,7 @@ public class Files {
     /**
      * 用于用户自定义排序的浮点数值
      */
-    private Double sortedOrder;
+    private BigDecimal sortedOrder;
 
     /**
      * 软删除标记。非NULL表示已移入回收站
