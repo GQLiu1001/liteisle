@@ -34,7 +34,6 @@
         WHERE
             f.user_id = #{userId}
           AND f.folder_type = 'notebook'
-          AND (#{content} IS NULL OR f.folder_name LIKE CONCAT('%', #{content}, '%'))
           AND f.delete_time IS NULL
         ORDER BY f.sorted_order ASC
     </select>
