@@ -21,4 +21,15 @@ public class UploadController {
             @RequestParam Long folderId) {
         return Result.success();
     }
+
+    /**
+     * 图片上传接口（专门处理md文档图片）
+     */
+    @Operation(summary = "图片上传接口（专门处理md文档图片）", description = "图片上传接口（专门处理md文档图片）")
+    @PostMapping("/upload")
+    public Result<String> uploadMdImage(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam Long file_id) {
+        return Result.success();
+    }
 }
