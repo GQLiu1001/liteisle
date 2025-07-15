@@ -7,6 +7,9 @@ import com.baomidou.mybatisplus.annotation.TableName;
 
 import java.math.BigDecimal;
 import java.util.Date;
+
+import com.liteisle.common.enums.FileStatusEnum;
+import com.liteisle.common.enums.FileTypeEnum;
 import lombok.Data;
 
 /**
@@ -50,12 +53,12 @@ public class Files {
     /**
      * 文件的业务大类，用于甄别应关联哪个元数据表
      */
-    private Object fileType;
+    private FileTypeEnum fileType;
 
     /**
      * 文件状态。processing:后台处理中; available:完全可用; failed:处理失败
      */
-    private Object fileStatus;
+    private FileStatusEnum fileStatus;
 
     /**
      * 用于用户自定义排序的浮点数值

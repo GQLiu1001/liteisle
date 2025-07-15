@@ -2,6 +2,10 @@ package com.liteisle.service;
 
 import com.liteisle.common.domain.Folders;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.liteisle.common.domain.response.DocumentViewResp;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
 * @author 11965
@@ -14,4 +18,11 @@ public interface FoldersService extends IService<Folders> {
      * @param userId
      */
     void createUserDefaultFolder(Long userId);
+
+    /**
+     * 获取用户文档页面的文档分类信息
+     * @param content 用户可能的搜索内容
+     * @return
+     */
+    CompletableFuture<List<DocumentViewResp.Notebook>> getDocumentViewWithContent(String content);
 }

@@ -64,6 +64,12 @@ public class Folders {
      */
     private Date updateTime;
 
+    /**
+     * 非数据库字段，用于存储符合条件的子文件数量
+     */
+    @TableField(exist = false)
+    private Integer documentCount;
+
     @Override
     public boolean equals(Object that) {
         if (this == that) {

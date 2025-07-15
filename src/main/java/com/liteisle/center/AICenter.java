@@ -1,8 +1,6 @@
 package com.liteisle.center;
 
 import com.alibaba.cloud.ai.memory.jdbc.MysqlChatMemoryRepository;
-import com.liteisle.util.AITool;
-import jakarta.annotation.Resource;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
@@ -15,10 +13,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 @Configuration
 public class AICenter {
-
-    // 如果未来需要使用 Function Calling，可以保留 AITool 的注入
-    @Resource
-    private AITool aiTool;
 
     @Bean
     public ChatClient chatClient(ChatClient.Builder builder, JdbcTemplate jdbcTemplate) {

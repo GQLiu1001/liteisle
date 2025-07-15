@@ -40,10 +40,4 @@ public class CaptchaUtil {
     public static String generate10DigitCaptcha() {
         return generateCaptcha(10);
     }
-
-    // 测试main
-    public static void main(String[] args) {
-        System.out.println("6位验证码：" + generate6DigitCaptcha());
-        System.out.println("10位验证码：" + generate10DigitCaptcha());
-    }
 }

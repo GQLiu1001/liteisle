@@ -20,4 +20,39 @@
         id,user_id,parent_id,folder_name,folder_type,sorted_order,
         delete_time,create_time,update_time
     </sql>
+    <select id="selectFoldersWithFilteredFileCount" resultType="com.liteisle.common.domain.Folders">
+        SELECT
+            f.*,
+            (SELECT COUNT(*)
+             FROM files file
+             WHERE file.folder_id = f.id
+               AND file.user_id = #{userId}
+               AND file.file_name LIKE CONCAT('%', #{content}, '%')
+               AND file.delete_time IS NULL
+            ) AS documentCount
+        FROM folders f
+        WHERE
+            f.user_id = #{userId}
+          AND f.folder_type = 'notebook'
+          AND (#{content} IS NULL OR f.folder_name LIKE CONCAT('%', #{content}, '%'))
+          AND f.delete_time IS NULL
+        ORDER BY f.sorted_order ASC
+    </select>
+    <select id="selectFoldersWithTotalFileCount" resultType="com.liteisle.common.domain.Folders">
+        SELECT
+            f.*,
+            COUNT(file.id) AS documentCount  -- 直接统计所有文件
+        FROM folders f
+                 LEFT JOIN files file
+                           ON f.id = file.folder_id
+                               AND file.user_id = #{userId}
+                               AND file.delete_time IS NULL
+        WHERE
+            f.user_id = #{userId}
+          AND f.folder_type = 'notebook'
+          AND f.delete_time IS NULL
+        GROUP BY f.id
+        ORDER BY f.sorted_order ASC
+    </select>
+
 </mapper>

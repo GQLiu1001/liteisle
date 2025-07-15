@@ -33,7 +33,7 @@ public class TranslateController {
     public Result<TranslateResp> translate(@RequestBody TranslateReq req) {
         String textToTranslate = req.getText();
         String fileName = req.getFileName();
-        String targetLang = "中文"; // 目标语言可以根据需求设计为可配置
+        String targetLang = "中文";
 
         // --- 输入校验 ---
         if (!StringUtils.hasText(textToTranslate)) {
@@ -56,16 +56,15 @@ public class TranslateController {
         try {
             String translatedText = chatClient.prompt()
                     .user(userMessage)
-                    // 关键改动：将会话ID与文件名关联
-                    // 这样，所有来自同一个文件的翻译请求都会共享相同的聊天记忆，有助于保持上下文一致性
+                    // 来自同一个文件的翻译请求都会共享相同的聊天记忆，有助于保持上下文一致性
                     .advisors(a -> a.param("chat_memory_conversation_id", fileName))
                     .call()
-                    .content(); // 使用 .call().content() 获取完整的、非流式的响应字符串
+                    .content();
 
             // --- 封装并返回结果 ---
             TranslateResp response = new TranslateResp();
-            response.setTranslatedText(translatedText); // 假设 TranslateResp 有一个 setTranslatedText 方法
-            response.setOriginalText(textToTranslate); // 也可以在响应中返回原文
+            response.setTranslatedText(translatedText);
+            response.setOriginalText(textToTranslate);
             return Result.success(response);
 
         } catch (Exception e) {
