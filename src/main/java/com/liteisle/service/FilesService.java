@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 */
 public interface FilesService extends IService<Files> {
     /**
-     * 获取文档页面具体的文件信息
+     * 按需获取文档页面具体的文件信息
      * @param content 用户可能的搜索内容
      * @return
      */

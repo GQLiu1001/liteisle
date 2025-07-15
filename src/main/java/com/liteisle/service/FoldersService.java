@@ -14,13 +14,13 @@ import java.util.concurrent.CompletableFuture;
 */
 public interface FoldersService extends IService<Folders> {
     /**
-     * 创建用户默认文件夹
-     * @param userId
+     * 系统创建用户默认文件夹
+     * @param userId 用户di
      */
     void createUserDefaultFolder(Long userId);
 
     /**
-     * 获取用户文档页面的文档分类信息
+     * 按需获取用户文档页面的文档分类信息
      * @param content 用户可能的搜索内容
      * @return
      */

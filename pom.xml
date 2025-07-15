@@ -32,11 +32,17 @@
         <jakarta.mail>2.0.1</jakarta.mail>
         <minio>8.5.17</minio>
         <redisson>3.23.0</redisson>
+        <asp>1.9.24</asp>
         <springai-alibaba>1.0.0.2</springai-alibaba>
         <mybatis-plus-spring-boot3-starter>3.5.12</mybatis-plus-spring-boot3-starter>
         <springdoc-openapi-starter-webmvc-ui>2.8.9</springdoc-openapi-starter-webmvc-ui>
     </properties>
     <dependencies>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>${asp}</version>
+        </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-jsqlparser</artifactId>
