@@ -27,10 +27,7 @@ public class FocusController {
     @PostMapping("/records")
     public Result<String> createFocusRecord(@RequestParam("focus_minutes") Integer min) {
         String url = userFocusRecordsService.createFocusRecord(min);
-        if (url != null){
-            return Result.success(url);
-        }
-        return Result.success();
+        return url==null?Result.success():Result.success(url);
     }
 
     /**
@@ -51,20 +48,13 @@ public class FocusController {
     public Result<FocusStatsPageResp> getFocusRecords(
             @RequestParam(defaultValue = "1", name = "page") Integer current,
             @RequestParam(defaultValue = "10",name = "size") Integer size) {
-
-        // 1. 创建Page对象
         Page<FocusStatsPageResp.FocusRecord> page = new Page<>(current, size);
-
-        // 2. 调用Service，获取MP处理后的分页结果
         IPage<FocusStatsPageResp.FocusRecord> pageData = userFocusRecordsService.getFocusRecords(page);
-
-        // 3. 转换为自定义的返回对象
         FocusStatsPageResp focusStatsPageResp = new FocusStatsPageResp();
         focusStatsPageResp.setCurrentPage((int)pageData.getCurrent());
         focusStatsPageResp.setPageSize((int)pageData.getSize());
         focusStatsPageResp.setTotal(pageData.getTotal());
         focusStatsPageResp.setRecords(pageData.getRecords());
-
         return Result.success(focusStatsPageResp);
     }
 

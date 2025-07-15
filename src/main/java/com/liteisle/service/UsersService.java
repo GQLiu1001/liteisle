@@ -19,43 +19,47 @@ public interface UsersService extends IService<Users> {
     /**
      * 用户登录
      * 验证用户名密码，通过-》返回jwt token
-     * @param req
+     * @param req 用户名密码
+     * @return AuthInfoResp
      */
     AuthInfoResp login(AuthLoginReq req);
 
     /**
      * 用户注册
      * 创建token返回相关信息时，创建默认文件夹！
-     * @param req
+     * @param req AuthRegisterReq
+     * @return AuthInfoResp
      */
     AuthInfoResp register(AuthRegisterReq req);
 
     /**
      * 发送验证码
-     * @param email
+     * @param email 邮箱
      */
     void sendVcode(String email);
 
     /**
      * 忘记密码
-     * @param req
+     * @param req AuthForgotPasswordReq
      */
     void forgotPassword(AuthForgotPasswordReq req);
 
     /**
      * 获取当前用户信息
+     * @return AuthCurrentUserResp
      */
     AuthCurrentUserResp getCurrentUser();
 
     /**
      * 修改当前用户密码
-     * @param req
+     * @param req AuthResetPasswordReq
      */
     void resetPassword(AuthResetPasswordReq req);
 
     /**
      * 上传当前用户头像
-     * @param file
+     * @param file 用户上传的图像
+     * @return 头像的URL
      */
     String uploadPicture(MultipartFile file);
 

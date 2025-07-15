@@ -28,7 +28,18 @@ public interface UserFocusRecordsService extends IService<UserFocusRecords> {
      */
     Long getFocusTotalCount();
 
+    /**
+     * 获取专注日历数据
+     * @param year 年
+     * @param month 月
+     * @return 专注日历数据
+     */
     FocusCalendarResp getFocusCalendar(Integer year, Integer month);
 
+    /**
+     * 获取专注记录列表
+     * @param page 分页参数
+     * @return 专注记录列表
+     */
     IPage<FocusStatsPageResp.FocusRecord> getFocusRecords(Page<FocusStatsPageResp.FocusRecord> page);
 }
