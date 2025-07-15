@@ -2,7 +2,10 @@ package com.liteisle.service;
 
 import com.liteisle.common.domain.Files;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.liteisle.common.domain.request.MarkdownCreateReq;
+import com.liteisle.common.domain.request.MarkdownUpdateReq;
 import com.liteisle.common.domain.response.DocumentViewResp;
+import com.liteisle.common.domain.response.MarkdownContentResp;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -16,7 +19,35 @@ public interface FilesService extends IService<Files> {
     /**
      * 按需获取文档页面具体的文件信息
      * @param content 用户可能的搜索内容
-     * @return
+     * @return DocumentFile
      */
     CompletableFuture<List<DocumentViewResp.DocumentFile>> getDocumentViewWithContent(String content);
+
+    /**
+     * 获取文档页面的访问地址
+     * @param fileId 文件id
+     * @return 访问地址
+     */
+    String getDocumentViewUrl(Long fileId);
+
+    /**
+     * 创建Markdown文档
+     * @param req 创建参数
+     * @return 文件id
+     */
+    Long createMarkdown(MarkdownCreateReq req);
+
+    /**
+     * 获取Markdown文档内容
+     * @param fileId 文件id
+     * @return 文档内容
+     */
+    MarkdownContentResp getMarkdownContent(Long fileId);
+
+    /**
+     * 更新Markdown文档内容
+     * @param fileId 文件id
+     * @param req 更新参数
+     */
+    void updateMarkdown(Long fileId, MarkdownUpdateReq req);
 }

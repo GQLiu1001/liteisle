@@ -2,7 +2,7 @@ package com.liteisle.controller;
 
 import com.liteisle.common.Result;
 import com.liteisle.common.domain.response.FileUploadAsyncResp;
-import com.liteisle.service.FileUploadService;
+import com.liteisle.service.business.FileUploadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;

@@ -1,12 +1,11 @@
 package com.liteisle.config;
 
-import jakarta.annotation.PreDestroy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+
 @Configuration
 public class VirtualThreadConfig {
 
@@ -17,11 +16,10 @@ public class VirtualThreadConfig {
      *
      * @return 返回一个每个任务使用一个虚拟线程的 ExecutorService。
      */
-    public static ExecutorService newVirtualThreadExecutor() {
-        // 方法一：使用JDK内置的虚拟线程工厂，直接返回一个“每任务一个虚拟线程”的线程池。
-        // 该线程池不会重用线程，而是为每个提交的任务创建一个新的虚拟线程，线程调度由JVM高效管理。
+    @Bean(name = "virtualThreadPool", destroyMethod = "shutdown")
+    public ExecutorService virtualThreadExecutor() {
         return Executors.newVirtualThreadPerTaskExecutor();
-
+    }
         /*
         // 方法二：自定义虚拟线程工厂
         // 可以通过Thread.ofVirtual()来定制虚拟线程的名称、异常处理器等，
@@ -37,7 +35,6 @@ public class VirtualThreadConfig {
         // 基于自定义线程工厂创建 ExecutorService，内部每个任务对应一个虚拟线程
         return Executors.newThreadPerTaskExecutor(factory);
         */
-    }
 
 
 }
