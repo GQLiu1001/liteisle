@@ -13,15 +13,17 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/recycle-bin")
 @Tag(name = "回收站接口")
 public class RecycleBinController {
+    //TODO 待测试
     @Resource
     private RecycleBinService recycleBinService;
+
     /**
      * 获取回收站内容
      */
     @Operation(summary = "获取回收站内容", description = "获取回收站内容")
     @GetMapping
-    public Result<RecycleBinContentResp> getRecycleBinContent() {
-        RecycleBinContentResp resp = recycleBinService.getRecycleBinContent();
+    public Result<RecycleBinContentResp> getRecycleBinContent(@RequestParam(required = false) String content) {
+        RecycleBinContentResp resp = recycleBinService.getRecycleBinContent(content);
         return Result.success(resp);
     }
 

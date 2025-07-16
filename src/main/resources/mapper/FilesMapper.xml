@@ -48,4 +48,24 @@
             )
         </if>
     </select>
+    <select id="getRecycleBinViewWithContent"
+            resultType="com.liteisle.common.domain.response.RecycleBinContentResp$FileItem">
+        select
+        f.id as original_id,
+        f.file_name as original_name,
+        f.file_type as original_type,
+        s.file_size,
+        f.delete_time,
+        -- 动态计算 expire_time
+        -- DATE_ADD 是 MySQL 的函数，将 delete_time 加上30天
+        DATE_ADD(f.delete_time, INTERVAL 30 DAY) as expire_time
+        from
+        files f left join storages s on f.storage_id = s.id
+        where
+        f.delete_time is not null
+        and f.user_id = #{userId}
+        <if test="content != null">
+            and f.file_name like concat('%', #{content}, '%')
+        </if>
+    </select>
 </mapper>

@@ -9,7 +9,7 @@ public interface RecycleBinService {
      *
      * @return RecycleBinContentResp
      */
-    RecycleBinContentResp getRecycleBinContent();
+    RecycleBinContentResp getRecycleBinContent(String content);
 
     /**
      * 恢复回收站项目

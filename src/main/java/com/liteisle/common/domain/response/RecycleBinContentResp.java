@@ -2,11 +2,12 @@ package com.liteisle.common.domain.response;
 
 import com.liteisle.common.enums.FileTypeEnum;
 import com.liteisle.common.enums.FolderTypeEnum;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.Date;
 import java.util.List;
-
+@AllArgsConstructor
 @Data
 public class RecycleBinContentResp {
     private List<FolderItem> folders;
@@ -17,7 +18,7 @@ public class RecycleBinContentResp {
         private Long originalId;
         private String originalName;
         private FolderTypeEnum originalType;
-        private Integer subItemCount;
+        private Integer subCount;
         private Date deleteTime;
         private Date expireTime;
     }

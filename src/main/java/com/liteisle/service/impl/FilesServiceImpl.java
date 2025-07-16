@@ -11,6 +11,7 @@ import com.liteisle.common.domain.request.MarkdownUpdateReq;
 import com.liteisle.common.domain.response.DocumentViewResp;
 import com.liteisle.common.domain.response.MarkdownContentResp;
 import com.liteisle.common.domain.response.MusicViewResp;
+import com.liteisle.common.domain.response.RecycleBinContentResp;
 import com.liteisle.common.enums.FileStatusEnum;
 import com.liteisle.common.enums.FileTypeEnum;
 import com.liteisle.common.exception.LiteisleException;
@@ -22,6 +23,7 @@ import com.liteisle.util.MinioUtil;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -33,13 +35,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
-* @author 11965
-* @description 针对表【files(文件通用基础信息表)】的数据库操作Service实现
-* @createDate 2025-07-10 20:09:48
-*/
+ * @author 11965
+ * @description 针对表【files(文件通用基础信息表)】的数据库操作Service实现
+ * @createDate 2025-07-10 20:09:48
+ */
 @Service
 public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
-    implements FilesService{
+        implements FilesService {
 
     @Resource
     private ExecutorService virtualThreadPool;
@@ -61,12 +63,12 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
 
         return CompletableFuture.supplyAsync(() -> {
             List<Files> list;
-            if (content == null){
+            if (content == null) {
                 list = this.list(new LambdaQueryWrapper<Files>()
                         .eq(Files::getUserId, userId)
                         .isNull(Files::getDeleteTime) // 过滤已删除文件
                 );
-            }else {
+            } else {
                 list = this.list(new LambdaQueryWrapper<Files>()
                         .eq(Files::getUserId, userId)
                         .like(Files::getFileName, content)
@@ -83,12 +85,12 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
     public String getDocumentViewUrl(Long fileId) {
         Long userId = UserContextHolder.getUserId();
         Files file = this.getOne(new QueryWrapper<Files>().eq("id", fileId).eq("user_id", userId));
-        if (file == null){
+        if (file == null) {
             throw new LiteisleException("文件不存在");
         }
         Long storageId = file.getStorageId();
         Storages storage = storagesService.getOne(new QueryWrapper<Storages>().eq("id", storageId));
-        if (storage == null){
+        if (storage == null) {
             throw new LiteisleException("文件存储信息不存在");
         }
         try {
@@ -98,6 +100,7 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
         }
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public Long createMarkdown(MarkdownCreateReq req) {
         Long userId = UserContextHolder.getUserId();
@@ -113,7 +116,7 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
         file.setCreateTime(new Date());
         file.setUpdateTime(new Date());
         boolean saveFile = this.save(file);
-        if (!saveFile){
+        if (!saveFile) {
             throw new LiteisleException("创建文件失败");
         }
         DocumentMetadata documentMetadata = new DocumentMetadata();
@@ -121,7 +124,7 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
         documentMetadata.setContent("");
         documentMetadata.setVersion(0L);
         boolean saveMeta = documentMetadataService.save(documentMetadata);
-        if (!saveMeta){
+        if (!saveMeta) {
             throw new LiteisleException("创建文件元数据失败");
         }
         return file.getId();
@@ -130,33 +133,34 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
     @Override
     public MarkdownContentResp getMarkdownContent(Long fileId) {
         DocumentMetadata documentMetadata = documentMetadataService.getOne(new QueryWrapper<DocumentMetadata>().eq("file_id", fileId));
-        if (documentMetadata == null){
+        if (documentMetadata == null) {
             throw new LiteisleException("文件元数据不存在");
         }
         return new MarkdownContentResp(documentMetadata.getContent(), documentMetadata.getVersion());
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void updateMarkdown(Long fileId, MarkdownUpdateReq req) {
         //TODO REDIS 缓存
         Long userId = UserContextHolder.getUserId();
         // 检查文件是否该用户名下存在
         Files one = this.getOne(new QueryWrapper<Files>().eq("id", fileId).eq("user_id", userId));
-        if (one == null){
+        if (one == null) {
             throw new LiteisleException("文件不存在");
         }
         DocumentMetadata documentMetadata = documentMetadataService.getOne(new QueryWrapper<DocumentMetadata>().eq("file_id", fileId));
-        if (documentMetadata == null){
+        if (documentMetadata == null) {
             throw new LiteisleException("文件元数据不存在");
         }
         documentMetadata.setContent(req.getContent());
         //判断version字段
-        if (!Objects.equals(documentMetadata.getVersion(), req.getVersion())){
+        if (!Objects.equals(documentMetadata.getVersion(), req.getVersion())) {
             throw new LiteisleException("文件修改失败");
         }
         documentMetadata.setVersion(documentMetadata.getVersion() + 1);
         boolean update = documentMetadataService.updateById(documentMetadata);
-        if (!update){
+        if (!update) {
             throw new LiteisleException("更新文件元数据失败");
         }
     }
@@ -167,17 +171,14 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
         if (userId == null) {
             return CompletableFuture.completedFuture(Collections.emptyList());
         }
-        return CompletableFuture.supplyAsync(() -> {
-            List<MusicViewResp.MusicFile> list = filesMapper.getMusicViewWithContent(content, userId);
-            return list.stream().toList();
-        }, virtualThreadPool);
+        return CompletableFuture.supplyAsync(() -> filesMapper.getMusicViewWithContent(content, userId), virtualThreadPool);
     }
 
     @Override
     public String getMusicPlayUrl(Long fileId) {
         Long userId = UserContextHolder.getUserId();
         Files file = this.getOne(new QueryWrapper<Files>().eq("id", fileId).eq("user_id", userId));
-        if (file == null){
+        if (file == null) {
             throw new LiteisleException("文件不存在");
         }
         Storages storages = storagesService.getById(file.getStorageId());
@@ -187,8 +188,17 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
         try {
             return minioUtil.getPresignedObjectUrl(storages.getStoragePath(), 1, TimeUnit.DAYS);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new LiteisleException(e.getMessage());
         }
+    }
+
+    @Override
+    public CompletableFuture<List<RecycleBinContentResp.FileItem>> getRecycleBinViewWithContent(String content) {
+        Long userId = UserContextHolder.getUserId();
+        if (userId == null) {
+            return CompletableFuture.completedFuture(Collections.emptyList());
+        }
+        return CompletableFuture.supplyAsync(() -> filesMapper.getRecycleBinViewWithContent(content, userId), virtualThreadPool);
     }
 
 

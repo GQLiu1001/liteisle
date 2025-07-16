@@ -2,6 +2,7 @@ package com.liteisle.mapper;
 
 import com.liteisle.common.domain.Folders;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.liteisle.common.domain.response.RecycleBinContentResp;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ public interface FoldersMapper extends BaseMapper<Folders> {
 
     List<Folders> selectFolders(Long userId, String type);
 
+    List<RecycleBinContentResp.FolderItem> getRecycleBinViewWithContent(Long userId, String content);
 }
 
 

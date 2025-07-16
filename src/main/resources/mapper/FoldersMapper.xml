@@ -53,6 +53,31 @@
         GROUP BY f.id
         ORDER BY f.sorted_order ASC
     </select>
+    <select id="getRecycleBinViewWithContent"
+            resultType="com.liteisle.common.domain.response.RecycleBinContentResp$FolderItem">
+        select
+        f.id AS originalId,
+        f.folder_name AS originalName,
+        f.folder_type AS originalType,
+        (SELECT COUNT(*)
+        FROM files file
+        WHERE file.folder_id = f.id
+        AND file.delete_time IS NULL -- 只统计未被删除的文件
+        ) AS subCount,
+        f.delete_time AS deleteTime,
+        -- 别名改为驼峰式，与 DTO 字段名 (expireTime) 匹配
+        DATE_ADD(f.delete_time, INTERVAL 30 DAY) as expireTime
+        from
+        folders f
+        where
+        f.delete_time IS NOT NULL
+        AND f.user_id = #{userId}
+        <if test="content != null and content != ''">
+            AND f.folder_name LIKE CONCAT('%', #{content}, '%')
+        </if>
+        -- 推荐按删除时间倒序排列
+        ORDER BY f.delete_time DESC
+    </select>
 
 
 </mapper>
