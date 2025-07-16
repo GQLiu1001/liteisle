@@ -1,6 +1,5 @@
 package com.liteisle.common.domain.response;
 
-import com.liteisle.common.enums.ItemType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -7,7 +7,6 @@ import com.liteisle.common.domain.Storages;
 import com.liteisle.common.domain.TransferLog;
 import com.liteisle.common.domain.request.ItemsSelectionReq;
 import com.liteisle.common.domain.response.DownloadSessionResp;
-import com.liteisle.common.enums.ItemType;
 import com.liteisle.common.enums.TransferStatusEnum;
 import com.liteisle.common.enums.TransferTypeEnum;
 import com.liteisle.common.exception.LiteisleException;
@@ -19,7 +18,6 @@ import com.liteisle.util.MinioUtil;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,7 +38,7 @@ public class DownloadServiceImpl implements DownloadService {
     private HttpServletRequest httpServletRequest;
     @Resource
     private MinioUtil minioUtil;
-    @Autowired
+    @Resource
     private FoldersService foldersService;
 
     @Transactional(rollbackFor = Exception.class)
