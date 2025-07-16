@@ -1,4 +1,4 @@
-package com.liteisle.service.business;
+package com.liteisle.service.business.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -16,6 +16,7 @@ import com.liteisle.common.exception.LiteisleException;
 import com.liteisle.service.FilesService;
 import com.liteisle.service.FoldersService;
 import com.liteisle.service.StoragesService;
+import com.liteisle.service.business.ItemViewService;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
@@ -29,7 +30,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -130,7 +130,7 @@ public class ItemViewServiceImpl implements ItemViewService {
 
 
 
-    // 重构后的 deleteItems 方法
+    // 修正后的 deleteItems 方法
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void deleteItems(ItemsDeleteReq req) {
@@ -139,7 +139,7 @@ public class ItemViewServiceImpl implements ItemViewService {
         }
         Long userId = UserContextHolder.getUserId();
 
-        // 1. 软删除文件夹
+        // 1. 软删除文件夹（逻辑不变，正确）
         if (req.getFolderIds() != null && !req.getFolderIds().isEmpty()) {
             foldersService.update(new UpdateWrapper<Folders>()
                     .in("id", req.getFolderIds())
@@ -147,40 +147,12 @@ public class ItemViewServiceImpl implements ItemViewService {
                     .set("delete_time", new Date()));
         }
 
-        // 2. 软删除文件并处理引用计数
+        // 2. 软删除文件（逻辑简化，移除引用计数操作）
         if (req.getFileIds() != null && !req.getFileIds().isEmpty()) {
-            // 步骤 2.1: 批量查询要删除的文件，获取它们的 storage_id
-            List<Files> filesToDelete = filesService.list(new LambdaQueryWrapper<Files>()
-                    .select(Files::getId, Files::getStorageId)
-                    .in(Files::getId, req.getFileIds())
-                    .eq(Files::getUserId, userId));
-
-            if (!filesToDelete.isEmpty()) {
-                List<Long> actualFileIds = filesToDelete.stream().map(Files::getId).collect(Collectors.toList());
-
-                // 步骤 2.2: 批量更新文件的 delete_time
-                filesService.update(new UpdateWrapper<Files>()
-                        .in("id", actualFileIds)
-                        .eq("user_id", userId)
-                        .set("delete_time", new Date()));
-
-                // 步骤 2.3: 统计每个 storage_id 被删除的次数
-                Map<Long, Long> storageIdRefCount = filesToDelete.stream()
-                        .filter(file -> file.getStorageId() != null)
-                        .collect(Collectors.groupingBy(Files::getStorageId, Collectors.counting()));
-
-                // 步骤 2.4: 批量减少 storages 的引用计数
-                if (!storageIdRefCount.isEmpty()) {
-                    // 注意：这里需要一条复杂的SQL语句或循环执行。
-                    // 如果数据库支持，可以使用 CASE WHEN 批量更新。
-                    // 简单起见，这里用循环，但比 N+1 好，因为查询已在前面完成。
-                    storageIdRefCount.forEach((storageId, count) -> {
-                        storagesService.update(new UpdateWrapper<Storages>()
-                                .eq("id", storageId)
-                                .setSql("reference_count = reference_count - " + count));
-                    });
-                }
-            }
+            filesService.update(new UpdateWrapper<Files>()
+                    .in("id", req.getFileIds())
+                    .eq("user_id", userId)
+                    .set("delete_time", new Date()));
         }
     }
 

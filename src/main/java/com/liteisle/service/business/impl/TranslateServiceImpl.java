@@ -1,8 +1,9 @@
-package com.liteisle.service.business;
+package com.liteisle.service.business.impl;
 
 import com.liteisle.common.domain.request.TranslateReq;
 import com.liteisle.common.domain.response.TranslateResp;
 import com.liteisle.common.exception.LiteisleException;
+import com.liteisle.service.business.TranslateService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 @Slf4j
 @Service
-public class TranslateServiceImpl implements  TranslateService{
+public class TranslateServiceImpl implements TranslateService {
     @Resource
     private ChatClient chatClient;
 

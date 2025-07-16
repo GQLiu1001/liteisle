@@ -1,13 +1,14 @@
-package com.liteisle.service.business;
+package com.liteisle.service.business.impl;
 
 import com.liteisle.common.domain.response.FolderContentResp;
+import com.liteisle.service.business.FolderViewService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class FolderViewServiceImpl implements  FolderViewService{
+public class FolderViewServiceImpl implements FolderViewService {
     @Override
     public FolderContentResp getFolderContent(Long folderId, String sortBy) {
         //TODO 获取文件夹内容

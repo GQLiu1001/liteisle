@@ -1,4 +1,4 @@
-package com.liteisle.service.business;
+package com.liteisle.service.business.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.liteisle.common.domain.Files;
@@ -14,6 +14,7 @@ import com.liteisle.service.FilesService;
 import com.liteisle.service.FoldersService;
 import com.liteisle.service.StoragesService;
 import com.liteisle.service.TransferLogService;
+import com.liteisle.service.business.DownloadService;
 import com.liteisle.util.MinioUtil;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;
