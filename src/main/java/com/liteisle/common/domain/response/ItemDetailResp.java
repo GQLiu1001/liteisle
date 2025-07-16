@@ -3,8 +3,10 @@ package com.liteisle.common.domain.response;
 import java.util.Date;
 
 import com.liteisle.common.enums.ItemType;
-import lombok.Data;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+@AllArgsConstructor
 @Data
 public class ItemDetailResp {
     private Long id;

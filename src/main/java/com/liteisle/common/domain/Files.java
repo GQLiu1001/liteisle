@@ -11,6 +11,7 @@ import java.util.Date;
 import com.liteisle.common.enums.FileStatusEnum;
 import com.liteisle.common.enums.FileTypeEnum;
 import lombok.Data;
+import lombok.Setter;
 
 /**
  * 文件通用基础信息表
@@ -18,6 +19,7 @@ import lombok.Data;
  */
 @TableName(value ="files")
 @Data
+@Setter
 public class Files {
     /**
      * 文件唯一ID (主键)
