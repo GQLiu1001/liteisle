@@ -5,7 +5,11 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
+
+import com.liteisle.common.enums.TransferStatusEnum;
+import com.liteisle.common.enums.TransferTypeEnum;
 import lombok.Data;
+import org.apache.logging.log4j.internal.LogManagerStatus;
 
 /**
  * 文件上传下载行为日志表
@@ -28,7 +32,7 @@ public class TransferLog {
     /**
      * 传输类型：上传或下载
      */
-    private Object transferType;
+    private TransferTypeEnum transferType;
 
     /**
      * 外键，关联到 files.id (如果传输对象是单个文件)
@@ -53,7 +57,7 @@ public class TransferLog {
     /**
      * 传输行为状态: 处理中, 成功, 失败, 已取消
      */
-    private Object logStatus;
+    private TransferStatusEnum logStatus;
 
     /**
      * 当status为failed或canceled时，记录相关信息

@@ -6,5 +6,5 @@ import lombok.Data;
 @Data
 public class ItemsSelectionReq {
     private List<Long> fileIds;
-    private List<Long> folderIds;
+    private Long folderId;
 }
