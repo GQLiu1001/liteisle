@@ -1,6 +1,7 @@
 package com.liteisle.service.business;
 
 import com.liteisle.common.domain.response.DocumentViewResp;
+import com.liteisle.common.exception.LiteisleException;
 import com.liteisle.service.impl.FilesServiceImpl;
 import com.liteisle.service.impl.FoldersServiceImpl;
 import jakarta.annotation.Resource;
@@ -21,7 +22,7 @@ public class DocumentViewServiceImpl implements DocumentViewService {
     public DocumentViewResp getDocumentView(String content) {
         // 并行执行两个异步查询
         CompletableFuture<List<DocumentViewResp.DocumentFile>> fileFuture = filesService.getDocumentViewWithContent(content);
-        CompletableFuture<List<DocumentViewResp.Notebook>> folderFuture = foldersService.getDocumentViewWithContent(content);
+        CompletableFuture<List<DocumentViewResp.Booklist>> folderFuture = foldersService.getDocumentViewWithContent(content);
 
         return CompletableFuture.allOf(fileFuture, folderFuture)
                 .thenApply(v -> {
@@ -31,7 +32,7 @@ public class DocumentViewServiceImpl implements DocumentViewService {
                                 fileFuture.get()     // 获取文件列表结果
                         );
                     } catch (Exception e) {
-                        throw new RuntimeException("获取文档信息失败", e);
+                        throw new LiteisleException("获取文档信息失败"+e.getMessage());
                     }
                 })
                 .exceptionally(ex -> {

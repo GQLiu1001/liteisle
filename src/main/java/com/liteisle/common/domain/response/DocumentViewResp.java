@@ -10,16 +10,16 @@ import lombok.Data;
 @AllArgsConstructor
 @Data
 public class DocumentViewResp {
-    private List<Notebook> notebooks;
+    private List<Booklist> booklists;
     private List<DocumentFile> files;
 
     @Data
-    public static class Notebook {
+    public static class Booklist {
         private Long id;
         private String folderName;
         private FolderTypeEnum folderType;
         private BigDecimal sortedOrder;
-        private Integer documentCount;
+        private Integer subCount;
     }
 
     @Data
