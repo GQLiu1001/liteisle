@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
+
 @AllArgsConstructor
 @Getter
 public enum FolderTypeEnum {
@@ -12,7 +12,7 @@ public enum FolderTypeEnum {
 
     PLAYLIST("playlist"),
 
-    NOTEBOOK("notebook");
+    BOOKLIST("booklist");
 
     @EnumValue
     @JsonValue

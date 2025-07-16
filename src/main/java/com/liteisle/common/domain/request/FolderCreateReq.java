@@ -7,5 +7,5 @@ import lombok.Data;
 public class FolderCreateReq {
     private String name;
     private Long parentId;
-    private FolderTypeEnum folderType; // "system", "playlist", "notebook" 等
+    private FolderTypeEnum folderType; // "system", "playlist", "booklist" 等
 }

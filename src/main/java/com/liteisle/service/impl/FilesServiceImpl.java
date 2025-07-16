@@ -10,6 +10,7 @@ import com.liteisle.common.domain.request.MarkdownCreateReq;
 import com.liteisle.common.domain.request.MarkdownUpdateReq;
 import com.liteisle.common.domain.response.DocumentViewResp;
 import com.liteisle.common.domain.response.MarkdownContentResp;
+import com.liteisle.common.domain.response.MusicViewResp;
 import com.liteisle.common.enums.FileStatusEnum;
 import com.liteisle.common.enums.FileTypeEnum;
 import com.liteisle.common.exception.LiteisleException;
@@ -20,7 +21,6 @@ import com.liteisle.service.StoragesService;
 import com.liteisle.util.MinioUtil;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -49,7 +49,8 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
     private StoragesService storagesService;
     @Resource
     private DocumentMetadataService documentMetadataService;
-
+    @Resource
+    private FilesMapper filesMapper;
 
     @Override
     public CompletableFuture<List<DocumentViewResp.DocumentFile>> getDocumentViewWithContent(String content) {
@@ -159,6 +160,37 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
             throw new LiteisleException("更新文件元数据失败");
         }
     }
+
+    @Override
+    public CompletableFuture<List<MusicViewResp.MusicFile>> getMusicViewWithContent(String content) {
+        Long userId = UserContextHolder.getUserId();
+        if (userId == null) {
+            return CompletableFuture.completedFuture(Collections.emptyList());
+        }
+        return CompletableFuture.supplyAsync(() -> {
+            List<MusicViewResp.MusicFile> list = filesMapper.getMusicViewWithContent(content, userId);
+            return list.stream().toList();
+        }, virtualThreadPool);
+    }
+
+    @Override
+    public String getMusicPlayUrl(Long fileId) {
+        Long userId = UserContextHolder.getUserId();
+        Files file = this.getOne(new QueryWrapper<Files>().eq("id", fileId).eq("user_id", userId));
+        if (file == null){
+            throw new LiteisleException("文件不存在");
+        }
+        Storages storages = storagesService.getById(file.getStorageId());
+        if (storages == null) {
+            throw new LiteisleException("文件存储信息不存在");
+        }
+        try {
+            return minioUtil.getPresignedObjectUrl(storages.getStoragePath(), 1, TimeUnit.DAYS);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     private DocumentViewResp.DocumentFile convertToDocumentFile(Files item) {
         DocumentViewResp.DocumentFile docFile = new DocumentViewResp.DocumentFile();

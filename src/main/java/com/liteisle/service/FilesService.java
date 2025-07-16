@@ -6,6 +6,7 @@ import com.liteisle.common.domain.request.MarkdownCreateReq;
 import com.liteisle.common.domain.request.MarkdownUpdateReq;
 import com.liteisle.common.domain.response.DocumentViewResp;
 import com.liteisle.common.domain.response.MarkdownContentResp;
+import com.liteisle.common.domain.response.MusicViewResp;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -50,4 +51,18 @@ public interface FilesService extends IService<Files> {
      * @param req 更新参数
      */
     void updateMarkdown(Long fileId, MarkdownUpdateReq req);
+
+    /**
+     * 获取音乐页面 信息
+     * @param content 可选搜索内容
+     * @return 音乐页面信息
+     */
+    CompletableFuture<List<MusicViewResp.MusicFile>> getMusicViewWithContent(String content);
+
+    /**
+     * 获取音乐播放链接
+     * @param fileId 文件id
+     * @return 音乐播放链接
+     */
+    String getMusicPlayUrl(Long fileId);
 }

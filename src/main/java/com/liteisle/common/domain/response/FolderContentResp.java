@@ -6,8 +6,9 @@ import java.util.List;
 import com.liteisle.common.enums.FileStatusEnum;
 import com.liteisle.common.enums.FileTypeEnum;
 import com.liteisle.common.enums.FolderTypeEnum;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-
+@AllArgsConstructor
 @Data
 public class FolderContentResp {
     private List<BreadcrumbItem> breadcrumb;
@@ -24,7 +25,7 @@ public class FolderContentResp {
     public static class FolderItem {
         private Long id;
         private String name;
-        private FolderTypeEnum folderType; // "system", "playlist", "notebook" 等
+        private FolderTypeEnum folderType; // "system", "playlist", "booklist" 等
         private Integer subItemCount;
         private Double sortedOrder;
         private Date createTime;

@@ -24,4 +24,28 @@
         file_type,file_status,sorted_order,delete_time,create_time,
         update_time
     </sql>
+    <select id="getMusicViewWithContent"
+            resultType="com.liteisle.common.domain.response.MusicViewResp$MusicFile">
+        select
+        f.id,
+        f.folder_id,
+        f.file_name,
+        f.file_type,
+        f.sorted_order,
+        m.artist,
+        m.album,
+        m.duration,
+        m.cover_art_url
+        from
+        files f
+        left join music_metadata m on f.id = m.file_id
+        where
+        f.delete_time is null
+        and f.user_id = #{userId}
+        <if test="content != null">
+            and (
+            f.file_name like concat('%', #{content}, '%')
+            )
+        </if>
+    </select>
 </mapper>

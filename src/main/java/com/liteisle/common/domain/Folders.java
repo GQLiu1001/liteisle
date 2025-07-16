@@ -40,7 +40,7 @@ public class Folders {
     private String folderName;
 
     /**
-     * 只有 system, playlist, notebook 三类。
+     * 只有 system, playlist, booklist 三类。
      */
     private FolderTypeEnum folderType;
 
@@ -68,7 +68,7 @@ public class Folders {
      * 非数据库字段，用于存储符合条件的子文件数量
      */
     @TableField(exist = false)
-    private Integer documentCount;
+    private Integer subCount;
 
     @Override
     public boolean equals(Object that) {

@@ -1,11 +1,13 @@
 package com.liteisle.common.domain.response;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.liteisle.common.enums.FileTypeEnum;
 import com.liteisle.common.enums.FolderTypeEnum;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-
+@AllArgsConstructor
 @Data
 public class MusicViewResp {
     private List<Playlist> playlists;
@@ -14,19 +16,19 @@ public class MusicViewResp {
     @Data
     public static class Playlist {
         private Long id;
-        private String name;
+        private String folderName;
         private FolderTypeEnum folderType;
-        private Double sortedOrder;
-        private Integer musicCount;
+        private BigDecimal sortedOrder;
+        private Integer subCount;
     }
     
     @Data
     public static class MusicFile {
         private Long id;
         private Long folderId;
-        private String name;
+        private String fileName;
         private FileTypeEnum fileType;
-        private Double sortedOrder;
+        private BigDecimal sortedOrder;
         private String artist;
         private String album;
         private Integer duration; // 单位为秒

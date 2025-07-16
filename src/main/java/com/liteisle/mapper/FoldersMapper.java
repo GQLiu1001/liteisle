@@ -14,9 +14,10 @@ import java.util.List;
 public interface FoldersMapper extends BaseMapper<Folders> {
 
 
-    List<Folders> selectFoldersWithFilteredFileCount(Long userId, String content);
+    List<Folders> selectFoldersWithCount(Long userId, String content, String type);
 
-    List<Folders> selectFoldersWithTotalFileCount(Long userId);
+    List<Folders> selectFolders(Long userId, String type);
+
 }
 
 

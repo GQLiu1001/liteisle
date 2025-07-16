@@ -2,6 +2,9 @@ package com.liteisle.mapper;
 
 import com.liteisle.common.domain.Files;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.liteisle.common.domain.response.MusicViewResp;
+
+import java.util.List;
 
 /**
 * @author 11965
@@ -11,6 +14,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 */
 public interface FilesMapper extends BaseMapper<Files> {
 
+    List<MusicViewResp.MusicFile> getMusicViewWithContent(String content, Long userId);
 }
 
 
