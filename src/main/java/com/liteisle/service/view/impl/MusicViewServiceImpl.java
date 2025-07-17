@@ -1,10 +1,10 @@
-package com.liteisle.service.business.impl;
+package com.liteisle.service.view.impl;
 
-import com.liteisle.common.dto.response.DocumentViewResp;
+import com.liteisle.common.dto.response.MusicViewResp;
 import com.liteisle.common.exception.LiteisleException;
-import com.liteisle.service.business.DocumentViewService;
-import com.liteisle.service.impl.FilesServiceImpl;
-import com.liteisle.service.impl.FoldersServiceImpl;
+import com.liteisle.service.core.FilesService;
+import com.liteisle.service.core.FoldersService;
+import com.liteisle.service.view.MusicViewService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,21 +14,24 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 @Slf4j
 @Service
-public class DocumentViewServiceImpl implements DocumentViewService {
+public class MusicViewServiceImpl implements MusicViewService {
+
     @Resource
-    private FilesServiceImpl filesService;
+    private FilesService filesService;
     @Resource
-    private FoldersServiceImpl foldersService;
+    private FoldersService foldersService;
+
+
     @Override
-    public DocumentViewResp getDocumentView(String content) {
+    public MusicViewResp getMusicView(String content) {
         // 并行执行两个异步查询
-        CompletableFuture<List<DocumentViewResp.DocumentFile>> fileFuture = filesService.getDocumentViewWithContent(content);
-        CompletableFuture<List<DocumentViewResp.Booklist>> folderFuture = foldersService.getDocumentViewWithContent(content);
+        CompletableFuture<List<MusicViewResp.MusicFile>> fileFuture = filesService.getMusicViewWithContent(content);
+        CompletableFuture<List<MusicViewResp.Playlist>> folderFuture = foldersService.getMusicViewWithContent(content);
 
         return CompletableFuture.allOf(fileFuture, folderFuture)
                 .thenApply(v -> {
                     try {
-                        return new DocumentViewResp(
+                        return new MusicViewResp(
                                 folderFuture.get(),  // 获取文件夹列表结果
                                 fileFuture.get()     // 获取文件列表结果
                         );
@@ -38,7 +41,7 @@ public class DocumentViewServiceImpl implements DocumentViewService {
                 })
                 .exceptionally(ex -> {
                     log.error("获取文档页面信息失败", ex);
-                    return new DocumentViewResp(Collections.emptyList(), Collections.emptyList());
+                    return new MusicViewResp(Collections.emptyList(), Collections.emptyList());
                 })
                 .join();
     }

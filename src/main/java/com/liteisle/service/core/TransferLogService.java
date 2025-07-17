@@ -1,4 +1,4 @@
-package com.liteisle.service;
+package com.liteisle.service.core;
 
 import com.liteisle.common.domain.TransferLog;
 import com.baomidou.mybatisplus.extension.service.IService;

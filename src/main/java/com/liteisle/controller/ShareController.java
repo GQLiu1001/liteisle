@@ -10,7 +10,7 @@ import com.liteisle.common.dto.response.ShareCreateResp;
 import com.liteisle.common.dto.response.ShareInfoResp;
 import com.liteisle.common.dto.response.ShareRecordPageResp;
 import com.liteisle.common.dto.response.ShareSaveAsyncResp;
-import com.liteisle.service.ShareLinksService;
+import com.liteisle.service.core.ShareLinksService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;

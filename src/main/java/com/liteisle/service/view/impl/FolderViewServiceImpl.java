@@ -1,12 +1,12 @@
-package com.liteisle.service.business.impl;
+package com.liteisle.service.view.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.liteisle.common.domain.Folders;
 import com.liteisle.common.dto.response.FolderContentResp;
 import com.liteisle.common.exception.LiteisleException;
-import com.liteisle.service.FilesService;
-import com.liteisle.service.FoldersService;
-import com.liteisle.service.business.FolderViewService;
+import com.liteisle.service.core.FilesService;
+import com.liteisle.service.core.FoldersService;
+import com.liteisle.service.view.FolderViewService;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;

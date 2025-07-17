@@ -2,8 +2,8 @@ package com.liteisle.controller;
 
 import com.liteisle.common.Result;
 import com.liteisle.common.dto.response.MusicViewResp;
-import com.liteisle.service.FilesService;
-import com.liteisle.service.business.MusicViewService;
+import com.liteisle.service.core.FilesService;
+import com.liteisle.service.view.MusicViewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;

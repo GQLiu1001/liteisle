@@ -1,7 +1,7 @@
 package com.liteisle.controller;
 
 import com.liteisle.common.Result;
-import com.liteisle.service.UserIslandsService;
+import com.liteisle.service.core.UserIslandsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;

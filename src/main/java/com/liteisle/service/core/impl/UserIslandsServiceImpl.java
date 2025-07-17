@@ -1,9 +1,9 @@
-package com.liteisle.service.impl;
+package com.liteisle.service.core.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.liteisle.common.domain.UserIslands;
-import com.liteisle.service.UserIslandsService;
+import com.liteisle.service.core.UserIslandsService;
 import com.liteisle.mapper.UserIslandsMapper;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;

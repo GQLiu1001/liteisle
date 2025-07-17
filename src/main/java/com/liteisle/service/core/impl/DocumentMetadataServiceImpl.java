@@ -1,8 +1,8 @@
-package com.liteisle.service.impl;
+package com.liteisle.service.core.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.liteisle.common.domain.DocumentMetadata;
-import com.liteisle.service.DocumentMetadataService;
+import com.liteisle.service.core.DocumentMetadataService;
 import com.liteisle.mapper.DocumentMetadataMapper;
 import org.springframework.stereotype.Service;
 

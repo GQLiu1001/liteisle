@@ -1,8 +1,8 @@
-package com.liteisle.service.impl;
+package com.liteisle.service.core.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.liteisle.common.domain.TransferLog;
-import com.liteisle.service.TransferLogService;
+import com.liteisle.service.core.TransferLogService;
 import com.liteisle.mapper.TransferLogMapper;
 import org.springframework.stereotype.Service;
 

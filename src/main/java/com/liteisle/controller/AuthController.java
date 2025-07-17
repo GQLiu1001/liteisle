@@ -8,7 +8,7 @@ import com.liteisle.common.dto.request.AuthRegisterReq;
 import com.liteisle.common.dto.request.AuthResetPasswordReq;
 import com.liteisle.common.dto.response.AuthCurrentUserResp;
 import com.liteisle.common.dto.response.AuthInfoResp;
-import com.liteisle.service.UsersService;
+import com.liteisle.service.core.UsersService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;

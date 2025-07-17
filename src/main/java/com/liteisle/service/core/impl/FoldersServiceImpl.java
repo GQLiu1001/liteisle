@@ -1,4 +1,4 @@
-package com.liteisle.service.impl;
+package com.liteisle.service.core.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -8,7 +8,7 @@ import com.liteisle.common.dto.request.FolderCreateReq;
 import com.liteisle.common.dto.response.*;
 import com.liteisle.common.enums.FolderTypeEnum;
 import com.liteisle.common.exception.LiteisleException;
-import com.liteisle.service.FoldersService;
+import com.liteisle.service.core.FoldersService;
 import com.liteisle.mapper.FoldersMapper;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;

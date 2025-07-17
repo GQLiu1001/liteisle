@@ -6,7 +6,7 @@ import com.liteisle.common.dto.request.ItemsOperationReq;
 import com.liteisle.common.dto.request.ItemsRenameReq;
 import com.liteisle.common.dto.request.SetOrderReq;
 import com.liteisle.common.dto.response.ItemDetailResp;
-import com.liteisle.service.business.ItemViewService;
+import com.liteisle.service.view.ItemViewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;

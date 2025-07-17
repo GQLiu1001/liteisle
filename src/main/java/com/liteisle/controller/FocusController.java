@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.liteisle.common.Result;
 import com.liteisle.common.dto.response.FocusCalendarResp;
 import com.liteisle.common.dto.response.FocusStatsPageResp;
-import com.liteisle.service.UserFocusRecordsService;
+import com.liteisle.service.core.UserFocusRecordsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;

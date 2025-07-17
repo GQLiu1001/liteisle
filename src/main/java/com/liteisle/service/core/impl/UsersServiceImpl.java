@@ -1,4 +1,4 @@
-package com.liteisle.service.impl;
+package com.liteisle.service.core.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -15,8 +15,8 @@ import com.liteisle.common.dto.response.AuthCurrentUserResp;
 import com.liteisle.common.dto.response.AuthInfoResp;
 import com.liteisle.common.exception.LiteisleException;
 import com.liteisle.config.MinioConfig;
-import com.liteisle.service.FoldersService;
-import com.liteisle.service.UsersService;
+import com.liteisle.service.core.FoldersService;
+import com.liteisle.service.core.UsersService;
 import com.liteisle.mapper.UsersMapper;
 import com.liteisle.util.*;
 import jakarta.annotation.Resource;

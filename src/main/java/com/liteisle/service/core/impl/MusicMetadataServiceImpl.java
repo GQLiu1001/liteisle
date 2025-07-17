@@ -1,8 +1,8 @@
-package com.liteisle.service.impl;
+package com.liteisle.service.core.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.liteisle.common.domain.MusicMetadata;
-import com.liteisle.service.MusicMetadataService;
+import com.liteisle.service.core.MusicMetadataService;
 import com.liteisle.mapper.MusicMetadataMapper;
 import org.springframework.stereotype.Service;
 

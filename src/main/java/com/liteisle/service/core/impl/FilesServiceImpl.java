@@ -1,4 +1,4 @@
-package com.liteisle.service.impl;
+package com.liteisle.service.core.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -12,10 +12,10 @@ import com.liteisle.common.dto.response.*;
 import com.liteisle.common.enums.FileStatusEnum;
 import com.liteisle.common.enums.FileTypeEnum;
 import com.liteisle.common.exception.LiteisleException;
-import com.liteisle.service.DocumentMetadataService;
-import com.liteisle.service.FilesService;
+import com.liteisle.service.core.DocumentMetadataService;
+import com.liteisle.service.core.FilesService;
 import com.liteisle.mapper.FilesMapper;
-import com.liteisle.service.StoragesService;
+import com.liteisle.service.core.StoragesService;
 import com.liteisle.util.MinioUtil;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;

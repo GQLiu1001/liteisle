@@ -1,4 +1,4 @@
-package com.liteisle.service;
+package com.liteisle.service.core;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.liteisle.common.domain.ShareLinks;
