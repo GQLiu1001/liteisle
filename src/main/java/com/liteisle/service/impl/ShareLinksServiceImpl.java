@@ -160,7 +160,7 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
             }
             shareInfoResp.setItemType(ItemType.FILE);
             shareInfoResp.setItemName(file.getFileName());
-            shareInfoResp.setItemSize(storagesService.getById(file.getId()).getFileSize());
+            shareInfoResp.setItemSize(storagesService.getById(file.getStorageId()).getFileSize());
             shareInfoResp.setTotalFiles(1L);
         } else {
             // 分享的是文件夹
@@ -198,9 +198,10 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
         if (!flag){
             throw new LiteisleException("验证失败");
         }
-
         //主要影响：file -》 storages 引用次数变多 且保存在用户自定义路径（默认为用户的分享文件夹下）
         // folder -》 file -》 storages 引用次数变多 且保存在用户自定义路径（默认为用户的分享文件夹下）
+        //链接： transfer log 与 websocket 通信
+        //TODO 开启传输任务链
         return null;
     }
 
