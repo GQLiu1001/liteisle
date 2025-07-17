@@ -1,7 +1,11 @@
 package com.liteisle.service.core;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.liteisle.common.domain.TransferLog;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.liteisle.common.dto.request.TransferStatusUpdateReq;
+import com.liteisle.common.dto.response.TransferLogPageResp;
+import com.liteisle.common.dto.response.TransferSummaryResp;
 
 /**
 * @author 11965
@@ -9,5 +13,22 @@ import com.baomidou.mybatisplus.extension.service.IService;
 * @createDate 2025-07-10 20:09:48
 */
 public interface TransferLogService extends IService<TransferLog> {
-
+    /**
+     * 获取传输历史记录
+     * @param page 分页参数
+     * @param status 可选文件状态
+     * @return 分页结果
+     */
+    IPage<TransferLogPageResp.TransferRecord> getTransferLogs(IPage<TransferLogPageResp.TransferRecord> page, String status);
+    /**
+     * 获取传输统计摘要
+     * @return 摘要结果
+     */
+    TransferSummaryResp getTransferSummary();
+    /**
+     * 更新下载任务传输状态
+     * @param logId 日志ID
+     * @param req 更新参数
+     */
+    void updateTransferStatus(Long logId, TransferStatusUpdateReq req);
 }

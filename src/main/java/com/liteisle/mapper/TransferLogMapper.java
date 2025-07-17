@@ -1,7 +1,9 @@
 package com.liteisle.mapper;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.liteisle.common.domain.TransferLog;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.liteisle.common.dto.response.TransferLogPageResp;
 
 /**
 * @author 11965
@@ -11,6 +13,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 */
 public interface TransferLogMapper extends BaseMapper<TransferLog> {
 
+    IPage<TransferLogPageResp.TransferRecord> getTransferLogs(IPage<TransferLogPageResp.TransferRecord> page, String status,Long userId);
 }
 
 

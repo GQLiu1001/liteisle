@@ -20,7 +20,6 @@ public class TransferLogPageResp {
         private String itemName;
         private Long itemSize;
         private TransferTypeEnum transferType; // "upload" 或 "download"
-        private TransferStatusEnum status; // "success" 或 "failed"
         private Date createTime;
     }
 }

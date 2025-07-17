@@ -67,7 +67,7 @@ public class TransferLog {
     /**
      * 传输总耗时，单位：毫秒 (ms)
      */
-    private Integer transferDurationMs;
+    private Long transferDurationMs;
 
     /**
      * 发起传输的客户端IP地址，用于安全审计
