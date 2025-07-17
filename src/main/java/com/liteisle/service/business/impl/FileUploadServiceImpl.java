@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class FileUploadServiceImpl implements FileUploadService {
+    //TODO 链接 transfer websocket链
     @Override
     public String uploadMdImage(MultipartFile file, Long fileId) {
         return "";
