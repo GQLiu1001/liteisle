@@ -134,20 +134,28 @@ public class ItemViewServiceImpl implements ItemViewService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void deleteItems(ItemsDeleteReq req) {
-        if ((req.getFileIds() == null || req.getFileIds().isEmpty()) && (req.getFolderIds() == null || req.getFolderIds().isEmpty())) {
+        if ((req.getFileIds() == null || req.getFileIds().isEmpty()) &&
+                (req.getFolderIds() == null || req.getFolderIds().isEmpty())) {
             throw new LiteisleException("请选择要删除的文件或文件夹");
         }
         Long userId = UserContextHolder.getUserId();
 
-        // 1. 软删除文件夹（逻辑不变，正确）
+        // 1. 软删除文件夹及其下的所有文件
         if (req.getFolderIds() != null && !req.getFolderIds().isEmpty()) {
+            // 1.1 软删除文件夹本身
             foldersService.update(new UpdateWrapper<Folders>()
                     .in("id", req.getFolderIds())
                     .eq("user_id", userId)
                     .set("delete_time", new Date()));
+
+            // 1.2 【新增逻辑】软删除这些文件夹下的所有文件
+            filesService.update(new UpdateWrapper<Files>()
+                    .in("folder_id", req.getFolderIds()) // 根据 folder_id 查找
+                    .eq("user_id", userId)            // 确保是该用户的文件
+                    .set("delete_time", new Date())); // 设置删除时间
         }
 
-        // 2. 软删除文件（逻辑简化，移除引用计数操作）
+        // 2. 软删除指定的文件
         if (req.getFileIds() != null && !req.getFileIds().isEmpty()) {
             filesService.update(new UpdateWrapper<Files>()
                     .in("id", req.getFileIds())
