@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -28,8 +29,20 @@ public class FolderViewServiceImpl implements FolderViewService {
     @Resource
     private ExecutorService virtualThreadPool;
 
+    // 定义合法的 sortBy 值
+    private static final List<String> VALID_SORT_BY_FIELDS = Arrays.asList(
+            "name", "file_size", "create_time", "update_time", "sorted_order"
+    );
+    // 定义合法的 sortOrder 值
+    private static final List<String> VALID_SORT_ORDERS = Arrays.asList(
+            "ASC", "DESC"
+    );
+
     @Override
     public FolderContentResp getFolderContent(Long folderId, String sortBy, String sortOrder, String content) {
+        // 参数校验：提前进行，如果参数无效，直接抛出异常，不进行后续的数据库操作
+        checkAvailability(sortBy, sortOrder);
+
         //获取的是当前folderId底下的数据
         Long userId = UserContextHolder.getUserId();
         // 1. 将所有独立的IO操作全部启动为异步任务
@@ -67,6 +80,30 @@ public class FolderViewServiceImpl implements FolderViewService {
                 })
                 .join(); // 阻塞并等待最终的组合结果
     }
+
+    /**
+     * 校验 sortBy 和 sortOrder 参数的合法性。
+     * 如果参数无效，将抛出 LiteisleException。
+     *
+     * @param sortBy    排序字段
+     * @param sortOrder 排序顺序
+     */
+    private void checkAvailability(String sortBy, String sortOrder) {
+        // 1. 校验 sortBy
+        // 如果 sortBy 为 null 或空，则使用默认排序 (sorted_order)，被认为是合法的
+        if (sortBy != null && !sortBy.isEmpty() && !VALID_SORT_BY_FIELDS.contains(sortBy)) {
+            throw new LiteisleException("无效的排序字段: " + sortBy);
+        }
+
+        // 2. 校验 sortOrder
+        // 如果 sortOrder 为 null 或空，则使用默认排序 (DESC)，被认为是合法的
+        if (sortOrder != null && !sortOrder.isEmpty() && !VALID_SORT_ORDERS.contains(sortOrder.toUpperCase())) {
+            throw new LiteisleException("无效的排序顺序: " + sortOrder + ". 只能是 ASC 或 DESC。");
+        }
+
+        // 不需要返回 boolean，如果校验不通过直接抛异常
+    }
+
 
     /**
      * 【重构】将 getBreadcrumb 包装成异步方法
