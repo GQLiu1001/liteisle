@@ -18,7 +18,7 @@ public interface UserFocusRecordsMapper extends BaseMapper<UserFocusRecords> {
     Integer getTotalFocusMinutesInMonth(Integer year, Integer month, Long userId);
 
     @Select("SELECT * FROM user_focus_records WHERE user_id = #{userId} ORDER BY create_time DESC")
-    IPage<FocusStatsPageResp.FocusRecord> selectFocusRecordsPage(Page<FocusStatsPageResp.FocusRecord> page, Long userId);
+    IPage<FocusStatsPageResp.FocusRecord> selectFocusRecordsPage(IPage<FocusStatsPageResp.FocusRecord> page, Long userId);
 }
 
 

@@ -20,4 +20,21 @@
         id,user_id,share_token,share_password,file_id,folder_id,
         expire_time,create_time,update_time
     </sql>
+    <select id="getShareRecords"
+            resultType="com.liteisle.common.domain.response.ShareRecordPageResp$ShareRecord">
+        SELECT
+            s.id,
+            s.share_token AS shareToken,
+            s.share_password AS sharePassword,
+            s.file_id AS fileId,
+            s.folder_id AS folderId,
+            s.expire_time AS expireTime,
+            s.create_time AS createTime,
+            COALESCE(f.file_name, fo.folder_name) AS shareItemName
+        FROM share_links s
+                 LEFT JOIN files f ON s.file_id = f.id
+                 LEFT JOIN folders fo ON s.folder_id = fo.id
+        WHERE s.user_id = #{userId}
+        ORDER BY s.create_time DESC
+    </select>
 </mapper>

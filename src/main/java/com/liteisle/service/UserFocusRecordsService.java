@@ -41,5 +41,5 @@ public interface UserFocusRecordsService extends IService<UserFocusRecords> {
      * @param page 分页参数
      * @return 专注记录列表
      */
-    IPage<FocusStatsPageResp.FocusRecord> getFocusRecords(Page<FocusStatsPageResp.FocusRecord> page);
+    IPage<FocusStatsPageResp.FocusRecord> getFocusRecords(IPage<FocusStatsPageResp.FocusRecord> page);
 }

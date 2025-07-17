@@ -1,7 +1,9 @@
 package com.liteisle.mapper;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.liteisle.common.domain.ShareLinks;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.liteisle.common.domain.response.ShareRecordPageResp;
 
 /**
 * @author 11965
@@ -11,6 +13,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 */
 public interface ShareLinksMapper extends BaseMapper<ShareLinks> {
 
+    IPage<ShareRecordPageResp.ShareRecord> getShareRecords(IPage<ShareRecordPageResp.ShareRecord> page, Long userId);
 }
 
 

@@ -108,7 +108,7 @@ public class UserFocusRecordsServiceImpl extends ServiceImpl<UserFocusRecordsMap
     }
 
     @Override
-    public IPage<FocusStatsPageResp.FocusRecord> getFocusRecords(Page<FocusStatsPageResp.FocusRecord> page) {
+    public IPage<FocusStatsPageResp.FocusRecord> getFocusRecords(IPage<FocusStatsPageResp.FocusRecord> page) {
         Long currentUserId = UserContextHolder.getUserId();
         // 直接调用Mapper方法，MP插件会自动完成所有分页工作
         return userFocusRecordsMapper.selectFocusRecordsPage(page, currentUserId);

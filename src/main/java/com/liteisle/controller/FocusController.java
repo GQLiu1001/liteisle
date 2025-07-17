@@ -48,11 +48,11 @@ public class FocusController {
     public Result<FocusStatsPageResp> getFocusRecords(
             @RequestParam(defaultValue = "1", name = "page") Integer current,
             @RequestParam(defaultValue = "10",name = "size") Integer size) {
-        Page<FocusStatsPageResp.FocusRecord> page = new Page<>(current, size);
+        IPage<FocusStatsPageResp.FocusRecord> page = new Page<>(current, size);
         IPage<FocusStatsPageResp.FocusRecord> pageData = userFocusRecordsService.getFocusRecords(page);
         FocusStatsPageResp focusStatsPageResp = new FocusStatsPageResp();
-        focusStatsPageResp.setCurrentPage((int)pageData.getCurrent());
-        focusStatsPageResp.setPageSize((int)pageData.getSize());
+        focusStatsPageResp.setCurrentPage(pageData.getCurrent());
+        focusStatsPageResp.setPageSize(pageData.getSize());
         focusStatsPageResp.setTotal(pageData.getTotal());
         focusStatsPageResp.setRecords(pageData.getRecords());
         return Result.success(focusStatsPageResp);

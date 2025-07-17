@@ -8,8 +8,8 @@ import java.util.List;
 @Data
 public class FocusStatsPageResp {
     private Long total;
-    private Integer currentPage;
-    private Integer pageSize;
+    private Long currentPage;
+    private Long pageSize;
     private List<FocusRecord> records;
     
     @Data

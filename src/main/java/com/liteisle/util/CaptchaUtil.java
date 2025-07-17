@@ -40,4 +40,12 @@ public class CaptchaUtil {
     public static String generate10DigitCaptcha() {
         return generateCaptcha(10);
     }
+
+    /**
+     * 生成24位验证码
+     * @return 24位验证码字符串
+     */
+    public static String generate24DigitCaptcha() {
+        return generateCaptcha(24);
+    }
 }

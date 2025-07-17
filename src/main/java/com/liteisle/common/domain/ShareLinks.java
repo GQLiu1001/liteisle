@@ -5,7 +5,11 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * 管理公开分享链接
@@ -13,6 +17,9 @@ import lombok.Data;
  */
 @TableName(value ="share_links")
 @Data
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class ShareLinks {
     /**
      * 分享记录唯一ID (主键)

@@ -1,8 +1,10 @@
 package com.liteisle.common.domain.request;
 
 import lombok.Data;
+import lombok.Getter;
 
 @Data
+@Getter
 public class ShareCreateReq {
     private Long fileId;         // 要分享的文件ID（可选）
     private Long folderId;       // 要分享的文件夹ID（可选）
