@@ -1,7 +1,6 @@
 package com.liteisle.common.domain;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
@@ -30,7 +29,7 @@ public class ShareLinks {
     /**
      * 外键，关联到 users.id，标识分享的创建者
      */
-    private Long userId;
+    private Long ownerId;
 
     /**
      * 分享链接的唯一公开凭证，是URL的一部分
@@ -80,7 +79,7 @@ public class ShareLinks {
         }
         ShareLinks other = (ShareLinks) that;
         return (this.getId() == null ? other.getId() == null : this.getId().equals(other.getId()))
-            && (this.getUserId() == null ? other.getUserId() == null : this.getUserId().equals(other.getUserId()))
+            && (this.getOwnerId() == null ? other.getOwnerId() == null : this.getOwnerId().equals(other.getOwnerId()))
             && (this.getShareToken() == null ? other.getShareToken() == null : this.getShareToken().equals(other.getShareToken()))
             && (this.getSharePassword() == null ? other.getSharePassword() == null : this.getSharePassword().equals(other.getSharePassword()))
             && (this.getFileId() == null ? other.getFileId() == null : this.getFileId().equals(other.getFileId()))
@@ -95,7 +94,7 @@ public class ShareLinks {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
-        result = prime * result + ((getUserId() == null) ? 0 : getUserId().hashCode());
+        result = prime * result + ((getOwnerId() == null) ? 0 : getOwnerId().hashCode());
         result = prime * result + ((getShareToken() == null) ? 0 : getShareToken().hashCode());
         result = prime * result + ((getSharePassword() == null) ? 0 : getSharePassword().hashCode());
         result = prime * result + ((getFileId() == null) ? 0 : getFileId().hashCode());
@@ -113,7 +112,7 @@ public class ShareLinks {
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
         sb.append(", id=").append(id);
-        sb.append(", userId=").append(userId);
+        sb.append(", userId=").append(ownerId);
         sb.append(", shareToken=").append(shareToken);
         sb.append(", sharePassword=").append(sharePassword);
         sb.append(", fileId=").append(fileId);

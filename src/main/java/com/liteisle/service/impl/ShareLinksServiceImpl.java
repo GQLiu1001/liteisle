@@ -25,7 +25,6 @@ import com.liteisle.util.CaptchaUtil;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -92,7 +91,7 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
             password = CaptchaUtil.generate6DigitCaptcha();
         }
         ShareLinks data = new ShareLinks();
-        data.setUserId(userId);
+        data.setOwnerId(userId);
         data.setShareToken(token);
         data.setSharePassword(password);
         data.setFileId(fileId);
@@ -140,13 +139,13 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
         }
 
         // 获取分享信息
-        ShareLinks shareLink = shareLinksService.getOne(new QueryWrapper<ShareLinks>()
+        ShareLinks shareLink = this.getOne(new QueryWrapper<ShareLinks>()
                 .eq("share_token", req.getShareToken()));
         if (shareLink == null) {
             throw new LiteisleException("分享链接无效");
         }
 
-        Long ownerUserId = shareLink.getUserId(); // 分享者用户ID
+        Long ownerUserId = shareLink.getOwnerId(); // 分享者用户ID
         ShareInfoResp shareInfoResp = new ShareInfoResp();
 
         if (shareLink.getFileId() != null) {
@@ -220,15 +219,17 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
 
     @Override
     public IPage<ShareRecordPageResp.ShareRecord> getShareRecords(IPage<ShareRecordPageResp.ShareRecord> page) {
-        Long userId = UserContextHolder.getUserId();
-        return shareLinksMapper.getShareRecords(page,userId);
+        Long ownerId = UserContextHolder.getUserId();
+        return shareLinksMapper.getShareRecords(page,ownerId);
     }
 
     @Override
     public void deleteShare(Long shareId) {
         //用户取消分享
-        Long userId = UserContextHolder.getUserId();
-        boolean remove = this.remove(new QueryWrapper<ShareLinks>().eq("id", shareId).eq("user_id", userId));
+        Long ownerId = UserContextHolder.getUserId();
+        boolean remove = this.remove(new QueryWrapper<ShareLinks>()
+                .eq("id", shareId)
+                .eq("owner_id", ownerId));
         if (!remove){
             throw new LiteisleException("删除分享失败");
         }

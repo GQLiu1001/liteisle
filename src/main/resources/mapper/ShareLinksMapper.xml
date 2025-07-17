@@ -6,7 +6,7 @@
 
     <resultMap id="BaseResultMap" type="com.liteisle.common.domain.ShareLinks">
             <id property="id" column="id" />
-            <result property="userId" column="user_id" />
+            <result property="ownerId" column="owner_id" />
             <result property="shareToken" column="share_token" />
             <result property="sharePassword" column="share_password" />
             <result property="fileId" column="file_id" />
@@ -17,7 +17,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,user_id,share_token,share_password,file_id,folder_id,
+        id,owner_id,share_token,share_password,file_id,folder_id,
         expire_time,create_time,update_time
     </sql>
     <select id="getShareRecords"
@@ -34,7 +34,7 @@
         FROM share_links s
                  LEFT JOIN files f ON s.file_id = f.id
                  LEFT JOIN folders fo ON s.folder_id = fo.id
-        WHERE s.user_id = #{userId}
+        WHERE s.owner_id = #{ownerId}
         ORDER BY s.create_time DESC
     </select>
 </mapper>

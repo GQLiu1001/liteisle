@@ -13,7 +13,7 @@ import com.liteisle.common.domain.response.ShareRecordPageResp;
 */
 public interface ShareLinksMapper extends BaseMapper<ShareLinks> {
 
-    IPage<ShareRecordPageResp.ShareRecord> getShareRecords(IPage<ShareRecordPageResp.ShareRecord> page, Long userId);
+    IPage<ShareRecordPageResp.ShareRecord> getShareRecords(IPage<ShareRecordPageResp.ShareRecord> page, Long ownerId);
 }
 
 
