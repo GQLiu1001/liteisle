@@ -75,6 +75,11 @@ public class TransferLog {
     private String clientIp;
 
     /**
+     * 删除时间
+     */
+    private Date deleteTime;
+
+    /**
      * 传输任务创建时间
      */
     private Date createTime;

@@ -17,13 +17,14 @@
             <result property="transferDurationMs" column="transfer_duration_ms" />
             <result property="clientIp" column="client_ip" />
             <result property="createTime" column="create_time" />
+            <result property="deleteTime" column="delete_time" />
             <result property="updateTime" column="update_time" />
     </resultMap>
 
     <sql id="Base_Column_List">
         id,user_id,transfer_type,file_id,folder_id,item_name,
         item_size,log_status,error_message,transfer_duration_ms,client_ip,
-        create_time,update_time
+        create_time,update_time,delete_time
     </sql>
     <select id="getTransferLogs"
             resultType="com.liteisle.common.dto.response.TransferLogPageResp$TransferRecord">
@@ -35,8 +36,7 @@
             create_time
         from transfer_log
         where user_id = #{userId}
-        <if test="status != null">
+            and delete_time is null
             and log_status = #{status}
-        </if>
     </select>
 </mapper>

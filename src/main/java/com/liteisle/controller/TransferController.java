@@ -28,7 +28,7 @@ public class TransferController {
     public Result<TransferLogPageResp> getTransferLogs(
             @RequestParam(defaultValue = "1",name = "current_page") Integer currentPage,
             @RequestParam(defaultValue = "10",name = "page_size") Integer pageSize,
-            @RequestParam(required = false,name = "status") String status) {
+            @RequestParam(name = "status") String status) {
         IPage<TransferLogPageResp.TransferRecord> page = new Page<>(currentPage, pageSize);
         IPage<TransferLogPageResp.TransferRecord> records = transferLogService.getTransferLogs(page, status);
         TransferLogPageResp transferLogPageResp = new TransferLogPageResp();
@@ -64,13 +64,14 @@ public class TransferController {
     }
 
     /**
-     * 取消传输任务
+     * 删除单条传输记录
      */
-    @Operation(summary = "取消传输任务,从传输列表中删除一条记录。", description = "取消传输任务")
+    @Operation(summary = "删除单条传输记录,从传输列表中删除一条记录。", description = "取消传输任务")
     @DeleteMapping("/{log_id}")
-    public Result<Void> cancelTransfer(
+    public Result<Void> deleteOneTransferLog(
             @PathVariable("log_id") Long logId,
             @RequestParam(defaultValue = "false") Boolean deleteFile) {
+        transferLogService.deleteOneTransferLog(logId, deleteFile);
         return Result.success();
     }
 
@@ -79,7 +80,9 @@ public class TransferController {
      */
     @Operation(summary = "清空已完成的传输记录。", description = "清空已完成的传输记录")
     @DeleteMapping("/completed")
-    public Result<Void> completedCleanTransferLog(@RequestParam(defaultValue = "false") Boolean deleteFile) {
+    public Result<Void> completedCleanTransferLog(
+            @RequestParam(defaultValue = "false") Boolean deleteFile) {
+        transferLogService.completedCleanTransferLog(deleteFile);
         return Result.success();
     }
 

@@ -31,4 +31,15 @@ public interface TransferLogService extends IService<TransferLog> {
      * @param req 更新参数
      */
     void updateTransferStatus(Long logId, TransferStatusUpdateReq req);
+    /**
+     * 删除单条传输记录,从传输列表中删除一条记录
+     * @param logId 日志ID
+     * @param deleteFile 是否删除文件
+     */
+    void deleteOneTransferLog(Long logId, Boolean deleteFile);
+    /**
+     * 清空已完成的传输记录
+     * @param deleteFile 是否删除文件
+     */
+    void completedCleanTransferLog(Boolean deleteFile);
 }
