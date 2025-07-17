@@ -29,7 +29,11 @@
     </sql>
     <select id="getTransferLogs"
             resultType="com.liteisle.common.dto.response.TransferLogPageResp$TransferRecord">
-        select id, as log_id, item_name, item_size, transfer_type, create_time
+        select id as log_id,
+               item_name,
+               item_size,
+               transfer_type,
+               create_time
         from transfer_log
         where user_id = #{userId}
           and delete_time is null
