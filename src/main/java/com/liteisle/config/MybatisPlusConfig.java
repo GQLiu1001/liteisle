@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @MapperScan("com.liteisle.mapper")
 public class MybatisPlusConfig {
-
+    //TODO 添加mp软删除逻辑 以及 全局处理用户ID隔离
     /**
      * 添加分页插件
      */
