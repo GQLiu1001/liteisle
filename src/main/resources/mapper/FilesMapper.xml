@@ -112,7 +112,7 @@
     <select id="getTotalSizeByFolderId" resultType="java.lang.Long">
         SELECT SUM(s.file_size)
         FROM files f
-                 JOIN storages s ON f.id = s.id
+                 JOIN storages s ON f.storage_id = s.id
         WHERE f.folder_id = #{folderId}
           AND f.file_status = 'AVAILABLE'
           and f.user_id = #{userId}
