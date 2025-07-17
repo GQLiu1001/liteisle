@@ -26,8 +26,8 @@ public class TransferController {
     @Operation(summary = "获取传输历史记录", description = "获取传输历史记录")
     @GetMapping
     public Result<TransferLogPageResp> getTransferLogs(
-            @RequestParam(defaultValue = "1",name = "current_page") Integer currentPage,
-            @RequestParam(defaultValue = "10",name = "page_size") Integer pageSize,
+            @RequestParam(defaultValue = "1", name = "current_page") Integer currentPage,
+            @RequestParam(defaultValue = "10", name = "page_size") Integer pageSize,
             @RequestParam(name = "status") String status) {
         IPage<TransferLogPageResp.TransferRecord> page = new Page<>(currentPage, pageSize);
         IPage<TransferLogPageResp.TransferRecord> records = transferLogService.getTransferLogs(page, status);

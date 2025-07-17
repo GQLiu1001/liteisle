@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.util.Date;
 
 import com.liteisle.common.enums.TransferStatusEnum;
@@ -13,9 +14,10 @@ import org.apache.logging.log4j.internal.LogManagerStatus;
 
 /**
  * 文件上传下载行为日志表
+ *
  * @TableName transfer_log
  */
-@TableName(value ="transfer_log")
+@TableName(value = "transfer_log")
 @Data
 public class TransferLog {
     /**
@@ -102,18 +104,18 @@ public class TransferLog {
         }
         TransferLog other = (TransferLog) that;
         return (this.getId() == null ? other.getId() == null : this.getId().equals(other.getId()))
-            && (this.getUserId() == null ? other.getUserId() == null : this.getUserId().equals(other.getUserId()))
-            && (this.getTransferType() == null ? other.getTransferType() == null : this.getTransferType().equals(other.getTransferType()))
-            && (this.getFileId() == null ? other.getFileId() == null : this.getFileId().equals(other.getFileId()))
-            && (this.getFolderId() == null ? other.getFolderId() == null : this.getFolderId().equals(other.getFolderId()))
-            && (this.getItemName() == null ? other.getItemName() == null : this.getItemName().equals(other.getItemName()))
-            && (this.getItemSize() == null ? other.getItemSize() == null : this.getItemSize().equals(other.getItemSize()))
-            && (this.getLogStatus() == null ? other.getLogStatus() == null : this.getLogStatus().equals(other.getLogStatus()))
-            && (this.getErrorMessage() == null ? other.getErrorMessage() == null : this.getErrorMessage().equals(other.getErrorMessage()))
-            && (this.getTransferDurationMs() == null ? other.getTransferDurationMs() == null : this.getTransferDurationMs().equals(other.getTransferDurationMs()))
-            && (this.getClientIp() == null ? other.getClientIp() == null : this.getClientIp().equals(other.getClientIp()))
-            && (this.getCreateTime() == null ? other.getCreateTime() == null : this.getCreateTime().equals(other.getCreateTime()))
-            && (this.getUpdateTime() == null ? other.getUpdateTime() == null : this.getUpdateTime().equals(other.getUpdateTime()));
+                && (this.getUserId() == null ? other.getUserId() == null : this.getUserId().equals(other.getUserId()))
+                && (this.getTransferType() == null ? other.getTransferType() == null : this.getTransferType().equals(other.getTransferType()))
+                && (this.getFileId() == null ? other.getFileId() == null : this.getFileId().equals(other.getFileId()))
+                && (this.getFolderId() == null ? other.getFolderId() == null : this.getFolderId().equals(other.getFolderId()))
+                && (this.getItemName() == null ? other.getItemName() == null : this.getItemName().equals(other.getItemName()))
+                && (this.getItemSize() == null ? other.getItemSize() == null : this.getItemSize().equals(other.getItemSize()))
+                && (this.getLogStatus() == null ? other.getLogStatus() == null : this.getLogStatus().equals(other.getLogStatus()))
+                && (this.getErrorMessage() == null ? other.getErrorMessage() == null : this.getErrorMessage().equals(other.getErrorMessage()))
+                && (this.getTransferDurationMs() == null ? other.getTransferDurationMs() == null : this.getTransferDurationMs().equals(other.getTransferDurationMs()))
+                && (this.getClientIp() == null ? other.getClientIp() == null : this.getClientIp().equals(other.getClientIp()))
+                && (this.getCreateTime() == null ? other.getCreateTime() == null : this.getCreateTime().equals(other.getCreateTime()))
+                && (this.getUpdateTime() == null ? other.getUpdateTime() == null : this.getUpdateTime().equals(other.getUpdateTime()));
     }
 
     @Override

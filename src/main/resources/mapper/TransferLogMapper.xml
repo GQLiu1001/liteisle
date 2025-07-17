@@ -5,38 +5,34 @@
 <mapper namespace="com.liteisle.mapper.TransferLogMapper">
 
     <resultMap id="BaseResultMap" type="com.liteisle.common.domain.TransferLog">
-            <id property="id" column="id" />
-            <result property="userId" column="user_id" />
-            <result property="transferType" column="transfer_type" />
-            <result property="fileId" column="file_id" />
-            <result property="folderId" column="folder_id" />
-            <result property="itemName" column="item_name" />
-            <result property="itemSize" column="item_size" />
-            <result property="logStatus" column="log_status" />
-            <result property="errorMessage" column="error_message" />
-            <result property="transferDurationMs" column="transfer_duration_ms" />
-            <result property="clientIp" column="client_ip" />
-            <result property="createTime" column="create_time" />
-            <result property="deleteTime" column="delete_time" />
-            <result property="updateTime" column="update_time" />
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="transferType" column="transfer_type"/>
+        <result property="fileId" column="file_id"/>
+        <result property="folderId" column="folder_id"/>
+        <result property="itemName" column="item_name"/>
+        <result property="itemSize" column="item_size"/>
+        <result property="logStatus" column="log_status"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="transferDurationMs" column="transfer_duration_ms"/>
+        <result property="clientIp" column="client_ip"/>
+        <result property="deleteTime" column="delete_time"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,user_id,transfer_type,file_id,folder_id,item_name,
+        id
+        ,user_id,transfer_type,file_id,folder_id,item_name,
         item_size,log_status,error_message,transfer_duration_ms,client_ip,
-        create_time,update_time,delete_time
+        delete_time,create_time,update_time
     </sql>
     <select id="getTransferLogs"
             resultType="com.liteisle.common.dto.response.TransferLogPageResp$TransferRecord">
-        select
-            id, as log_id,
-            item_name,
-            item_size,
-            transfer_type,
-            create_time
+        select id, as log_id, item_name, item_size, transfer_type, create_time
         from transfer_log
         where user_id = #{userId}
-            and delete_time is null
-            and log_status = #{status}
+          and delete_time is null
+          and log_status = #{status}
     </select>
 </mapper>
