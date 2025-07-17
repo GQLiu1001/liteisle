@@ -110,7 +110,10 @@ public class FoldersServiceImpl extends ServiceImpl<FoldersMapper, Folders>
     @Override
     public List<FolderHierarchyResp> getFolderHierarchy() {
         Long userId = UserContextHolder.getUserId();
-        List<Folders> list = this.list(new QueryWrapper<Folders>().eq("user_id", userId));
+        //List<Folders> list = this.list(new QueryWrapper<Folders>().eq("user_id", userId));
+        List<Folders> list = this.list(new QueryWrapper<Folders>()
+                .eq("user_id", userId)
+                .isNull("delete_time")); // 增加此行
         // 注意：如果 list 为空，这里会返回一个空List，而不是抛异常，这通常是更好的行为
         return list.stream()
                 .map(folder -> {
