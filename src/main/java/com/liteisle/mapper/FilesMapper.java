@@ -21,6 +21,8 @@ public interface FilesMapper extends BaseMapper<Files> {
     List<RecycleBinContentResp.FileItem> getRecycleBinViewWithContent(String content, Long userId);
 
     List<FolderContentResp.FileItem> getFolderContentWithSort(Long folderId, String sortBy, Long userId ,String sortOrder,String content);
+
+    Long getTotalSizeByFolderId(Long folderId,Long userId);
 }
 
 

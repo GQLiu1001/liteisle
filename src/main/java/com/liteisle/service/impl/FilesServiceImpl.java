@@ -208,6 +208,11 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
                 folderId,sortBy, userId,sortOrder,content), virtualThreadPool);
     }
 
+    @Override
+    public Long getFileTotalSizeFromFolderId(Long folderId , Long userId) {
+        return filesMapper.getTotalSizeByFolderId(folderId,userId);
+    }
+
 
     private DocumentViewResp.DocumentFile convertToDocumentFile(Files item) {
         DocumentViewResp.DocumentFile docFile = new DocumentViewResp.DocumentFile();

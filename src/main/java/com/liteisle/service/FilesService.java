@@ -88,4 +88,13 @@ public interface FilesService extends IService<Files> {
      */
     CompletableFuture<List<FolderContentResp.FileItem>> getFolderContentWithSort(
             Long folderId, String sortBy, Long userId ,String sortOrder, String content);
+
+    /**
+     * 获取父文件夹下所有文件的size大小
+     *
+     * @param folderId 文件夹id
+     * @param userId   分享人id
+     * @return 父文件夹下所有文件的size大小
+     */
+    Long getFileTotalSizeFromFolderId(Long folderId,Long userId);
 }

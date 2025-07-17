@@ -14,11 +14,13 @@ import com.liteisle.common.domain.response.ShareInfoResp;
 import com.liteisle.common.domain.response.ShareRecordPageResp;
 import com.liteisle.common.domain.response.ShareSaveAsyncResp;
 import com.liteisle.common.enums.FileStatusEnum;
+import com.liteisle.common.enums.ItemType;
 import com.liteisle.common.exception.LiteisleException;
 import com.liteisle.service.FilesService;
 import com.liteisle.service.FoldersService;
 import com.liteisle.service.ShareLinksService;
 import com.liteisle.mapper.ShareLinksMapper;
+import com.liteisle.service.StoragesService;
 import com.liteisle.util.CaptchaUtil;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;
@@ -46,9 +48,10 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
     private FilesService filesService;
     @Resource
     private FoldersService foldersService;
-    @Autowired
+    @Resource
     private ShareLinksService shareLinksService;
-
+    @Resource
+    private StoragesService storagesService;
     @Override
     public ShareCreateResp createShare(ShareCreateReq req) {
         //一次只能分享单个文件或者单个文件夹
@@ -130,20 +133,89 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
 
     @Override
     public ShareInfoResp verifyShare(ShareVerifyReq req) {
-        //验证 有效期 密码 token
-        //用户输入验证 验证成功会展示的项目为ShareInfoResp
-        return null;
+        // 验证 token 和密码
+        boolean flag = validateGetShareRequest(req.getShareToken(), req.getSharePassword());
+        if (!flag){
+            throw new LiteisleException("验证失败");
+        }
+
+        // 获取分享信息
+        ShareLinks shareLink = shareLinksService.getOne(new QueryWrapper<ShareLinks>()
+                .eq("share_token", req.getShareToken()));
+        if (shareLink == null) {
+            throw new LiteisleException("分享链接无效");
+        }
+
+        Long ownerUserId = shareLink.getUserId(); // 分享者用户ID
+        ShareInfoResp shareInfoResp = new ShareInfoResp();
+
+        if (shareLink.getFileId() != null) {
+            // 分享的是文件
+            Files file = filesService.getOne(new QueryWrapper<Files>()
+                    .eq("id", shareLink.getFileId())
+                    .eq("user_id", ownerUserId)
+                    .eq("delete_time", null));
+            if (file == null) {
+                throw new LiteisleException("分享文件不存在或已删除");
+            }
+            shareInfoResp.setItemType(ItemType.FILE);
+            shareInfoResp.setItemName(file.getFileName());
+            shareInfoResp.setItemSize(storagesService.getById(file.getId()).getFileSize());
+            shareInfoResp.setTotalFiles(1L);
+        } else {
+            // 分享的是文件夹
+            Folders folder = foldersService.getOne(new QueryWrapper<Folders>()
+                    .eq("id", shareLink.getFolderId())
+                    .eq("user_id", ownerUserId)
+                    .eq("delete_time", null));
+            if (folder == null) {
+                throw new LiteisleException("分享文件夹不存在或已删除");
+            }
+            shareInfoResp.setItemType(ItemType.FOLDER);
+            shareInfoResp.setItemName(folder.getFolderName());
+
+            // 获取文件夹总大小，仅统计分享人自己的文件
+            Long totalSize = filesService.getFileTotalSizeFromFolderId(shareLink.getFolderId(), ownerUserId);
+            shareInfoResp.setItemSize(totalSize);
+
+            // 获取文件夹下文件数量，仅统计分享人自己的文件
+            Long count = filesService.count(new QueryWrapper<Files>()
+                    .eq("folder_id", shareLink.getFolderId())
+                    .eq("user_id", ownerUserId)
+                    .eq("delete_time", null));
+            shareInfoResp.setTotalFiles(count);
+        }
+
+        return shareInfoResp;
     }
+
 
     @Override
     public ShareSaveAsyncResp saveShare(ShareSaveReq req) {
         //注意要再验证一次有效期 密码 token ,verifyShare 只是展示
         //用户保存分享的文件/文件夹 输入token 密码 以及 用户自定义保存路径
+        boolean flag = validateGetShareRequest(req.getShareToken(), req.getSharePassword());
+        if (!flag){
+            throw new LiteisleException("验证失败");
+        }
 
         //主要影响：file -》 storages 引用次数变多 且保存在用户自定义路径（默认为用户的分享文件夹下）
         // folder -》 file -》 storages 引用次数变多 且保存在用户自定义路径（默认为用户的分享文件夹下）
         return null;
     }
+
+    private boolean validateGetShareRequest(String shareToken, String sharePassword) {
+        ShareLinks shareLink = this.getOne(new QueryWrapper<ShareLinks>().eq("share_token", shareToken));
+        if (shareLink == null) return false;
+        // 检查有效期
+        if (shareLink.getExpireTime() != null && new Date().after(shareLink.getExpireTime())) {
+            return false;
+        }
+        // 如果设置了密码，需校验
+        return shareLink.getSharePassword() == null || shareLink.getSharePassword().equals(sharePassword);
+    }
+
+
 
     @Override
     public IPage<ShareRecordPageResp.ShareRecord> getShareRecords(IPage<ShareRecordPageResp.ShareRecord> page) {
