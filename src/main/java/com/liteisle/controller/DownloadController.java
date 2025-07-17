@@ -1,8 +1,8 @@
 package com.liteisle.controller;
 
 import com.liteisle.common.Result;
-import com.liteisle.common.domain.request.ItemsSelectionReq;
-import com.liteisle.common.domain.response.DownloadSessionResp;
+import com.liteisle.common.dto.request.ItemsSelectionReq;
+import com.liteisle.common.dto.response.DownloadSessionResp;
 import com.liteisle.service.business.DownloadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -1,6 +1,6 @@
 package com.liteisle.service.business.impl;
 
-import com.liteisle.common.domain.response.DocumentViewResp;
+import com.liteisle.common.dto.response.DocumentViewResp;
 import com.liteisle.common.exception.LiteisleException;
 import com.liteisle.service.business.DocumentViewService;
 import com.liteisle.service.impl.FilesServiceImpl;

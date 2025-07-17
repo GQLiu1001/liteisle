@@ -1,9 +1,9 @@
 package com.liteisle.controller;
 
 import com.liteisle.common.Result;
-import com.liteisle.common.domain.request.TransferStatusUpdateReq;
-import com.liteisle.common.domain.response.TransferLogPageResp;
-import com.liteisle.common.domain.response.TransferSummaryResp;
+import com.liteisle.common.dto.request.TransferStatusUpdateReq;
+import com.liteisle.common.dto.response.TransferLogPageResp;
+import com.liteisle.common.dto.response.TransferSummaryResp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;

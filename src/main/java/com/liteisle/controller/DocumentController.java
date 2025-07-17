@@ -1,10 +1,10 @@
 package com.liteisle.controller;
 
 import com.liteisle.common.Result;
-import com.liteisle.common.domain.request.MarkdownCreateReq;
-import com.liteisle.common.domain.request.MarkdownUpdateReq;
-import com.liteisle.common.domain.response.DocumentViewResp;
-import com.liteisle.common.domain.response.MarkdownContentResp;
+import com.liteisle.common.dto.request.MarkdownCreateReq;
+import com.liteisle.common.dto.request.MarkdownUpdateReq;
+import com.liteisle.common.dto.response.DocumentViewResp;
+import com.liteisle.common.dto.response.MarkdownContentResp;
 import com.liteisle.service.*;
 import com.liteisle.service.business.DocumentViewService;
 import io.swagger.v3.oas.annotations.Operation;

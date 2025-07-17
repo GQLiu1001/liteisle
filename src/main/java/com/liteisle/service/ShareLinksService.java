@@ -3,13 +3,13 @@ package com.liteisle.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.liteisle.common.domain.ShareLinks;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.liteisle.common.domain.request.ShareCreateReq;
-import com.liteisle.common.domain.request.ShareSaveReq;
-import com.liteisle.common.domain.request.ShareVerifyReq;
-import com.liteisle.common.domain.response.ShareCreateResp;
-import com.liteisle.common.domain.response.ShareInfoResp;
-import com.liteisle.common.domain.response.ShareRecordPageResp;
-import com.liteisle.common.domain.response.ShareSaveAsyncResp;
+import com.liteisle.common.dto.request.ShareCreateReq;
+import com.liteisle.common.dto.request.ShareSaveReq;
+import com.liteisle.common.dto.request.ShareVerifyReq;
+import com.liteisle.common.dto.response.ShareCreateResp;
+import com.liteisle.common.dto.response.ShareInfoResp;
+import com.liteisle.common.dto.response.ShareRecordPageResp;
+import com.liteisle.common.dto.response.ShareSaveAsyncResp;
 
 /**
  * @author 11965

@@ -1,6 +1,6 @@
 package com.liteisle.service.business;
 
-import com.liteisle.common.domain.response.FileUploadAsyncResp;
+import com.liteisle.common.dto.response.FileUploadAsyncResp;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface FileUploadService {

@@ -53,7 +53,7 @@
         GROUP BY f.id
         ORDER BY f.sorted_order ASC
     </select>
-    <select id="getRecycleBinViewWithContent" resultType="com.liteisle.common.domain.response.RecycleBinContentResp$FolderItem">
+    <select id="getRecycleBinViewWithContent" resultType="com.liteisle.common.dto.response.RecycleBinContentResp$FolderItem">
         select
         f.id as originalId,
         f.folder_name as originalName,
@@ -79,7 +79,7 @@
     </select>
 
     <select id="getFolderContentWithSort"
-            resultType="com.liteisle.common.domain.response.FolderContentResp$FolderItem">
+            resultType="com.liteisle.common.dto.response.FolderContentResp$FolderItem">
         select
         f.id,
         f.folder_name,

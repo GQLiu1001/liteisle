@@ -2,9 +2,9 @@ package com.liteisle.service;
 
 import com.liteisle.common.domain.Files;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.liteisle.common.domain.request.MarkdownCreateReq;
-import com.liteisle.common.domain.request.MarkdownUpdateReq;
-import com.liteisle.common.domain.response.*;
+import com.liteisle.common.dto.request.MarkdownCreateReq;
+import com.liteisle.common.dto.request.MarkdownUpdateReq;
+import com.liteisle.common.dto.response.*;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

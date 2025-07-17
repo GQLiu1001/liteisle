@@ -2,12 +2,12 @@ package com.liteisle.service;
 
 import com.liteisle.common.domain.Users;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.liteisle.common.domain.request.AuthForgotPasswordReq;
-import com.liteisle.common.domain.request.AuthLoginReq;
-import com.liteisle.common.domain.request.AuthRegisterReq;
-import com.liteisle.common.domain.request.AuthResetPasswordReq;
-import com.liteisle.common.domain.response.AuthCurrentUserResp;
-import com.liteisle.common.domain.response.AuthInfoResp;
+import com.liteisle.common.dto.request.AuthForgotPasswordReq;
+import com.liteisle.common.dto.request.AuthLoginReq;
+import com.liteisle.common.dto.request.AuthRegisterReq;
+import com.liteisle.common.dto.request.AuthResetPasswordReq;
+import com.liteisle.common.dto.response.AuthCurrentUserResp;
+import com.liteisle.common.dto.response.AuthInfoResp;
 import org.springframework.web.multipart.MultipartFile;
 
 /**

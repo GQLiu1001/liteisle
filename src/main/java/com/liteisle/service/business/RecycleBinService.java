@@ -1,7 +1,7 @@
 package com.liteisle.service.business;
 
-import com.liteisle.common.domain.request.RecycleBinReq;
-import com.liteisle.common.domain.response.RecycleBinContentResp;
+import com.liteisle.common.dto.request.RecycleBinReq;
+import com.liteisle.common.dto.response.RecycleBinContentResp;
 
 public interface RecycleBinService {
     /**

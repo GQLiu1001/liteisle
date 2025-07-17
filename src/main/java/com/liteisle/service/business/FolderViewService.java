@@ -1,6 +1,6 @@
 package com.liteisle.service.business;
 
-import com.liteisle.common.domain.response.FolderContentResp;
+import com.liteisle.common.dto.response.FolderContentResp;
 
 public interface FolderViewService {
     /**

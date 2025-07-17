@@ -1,10 +1,10 @@
 package com.liteisle.service.business;
 
-import com.liteisle.common.domain.request.ItemsDeleteReq;
-import com.liteisle.common.domain.request.ItemsOperationReq;
-import com.liteisle.common.domain.request.ItemsRenameReq;
-import com.liteisle.common.domain.request.SetOrderReq;
-import com.liteisle.common.domain.response.ItemDetailResp;
+import com.liteisle.common.dto.request.ItemsDeleteReq;
+import com.liteisle.common.dto.request.ItemsOperationReq;
+import com.liteisle.common.dto.request.ItemsRenameReq;
+import com.liteisle.common.dto.request.SetOrderReq;
+import com.liteisle.common.dto.response.ItemDetailResp;
 
 public interface ItemViewService {
     /**

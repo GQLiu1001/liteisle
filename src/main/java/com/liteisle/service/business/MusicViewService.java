@@ -1,6 +1,6 @@
 package com.liteisle.service.business;
 
-import com.liteisle.common.domain.response.MusicViewResp;
+import com.liteisle.common.dto.response.MusicViewResp;
 
 public interface MusicViewService {
     /**

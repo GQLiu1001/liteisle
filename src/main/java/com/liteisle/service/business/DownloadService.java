@@ -1,7 +1,7 @@
 package com.liteisle.service.business;
 
-import com.liteisle.common.domain.request.ItemsSelectionReq;
-import com.liteisle.common.domain.response.DownloadSessionResp;
+import com.liteisle.common.dto.request.ItemsSelectionReq;
+import com.liteisle.common.dto.response.DownloadSessionResp;
 
 public interface DownloadService {
     /**

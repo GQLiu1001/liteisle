@@ -1,9 +1,9 @@
 package com.liteisle.controller;
 
 import com.liteisle.common.Result;
-import com.liteisle.common.domain.request.FolderCreateReq;
-import com.liteisle.common.domain.response.FolderContentResp;
-import com.liteisle.common.domain.response.FolderHierarchyResp;
+import com.liteisle.common.dto.request.FolderCreateReq;
+import com.liteisle.common.dto.response.FolderContentResp;
+import com.liteisle.common.dto.response.FolderHierarchyResp;
 import com.liteisle.service.FoldersService;
 import com.liteisle.service.business.FolderViewService;
 import io.swagger.v3.oas.annotations.Operation;

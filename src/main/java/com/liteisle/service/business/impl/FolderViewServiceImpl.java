@@ -2,7 +2,7 @@ package com.liteisle.service.business.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.liteisle.common.domain.Folders;
-import com.liteisle.common.domain.response.FolderContentResp;
+import com.liteisle.common.dto.response.FolderContentResp;
 import com.liteisle.common.exception.LiteisleException;
 import com.liteisle.service.FilesService;
 import com.liteisle.service.FoldersService;

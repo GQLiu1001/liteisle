@@ -3,7 +3,7 @@ package com.liteisle.mapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.liteisle.common.domain.ShareLinks;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.liteisle.common.domain.response.ShareRecordPageResp;
+import com.liteisle.common.dto.response.ShareRecordPageResp;
 
 /**
 * @author 11965

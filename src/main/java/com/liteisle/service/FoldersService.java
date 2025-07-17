@@ -2,8 +2,8 @@ package com.liteisle.service;
 
 import com.liteisle.common.domain.Folders;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.liteisle.common.domain.request.FolderCreateReq;
-import com.liteisle.common.domain.response.*;
+import com.liteisle.common.dto.request.FolderCreateReq;
+import com.liteisle.common.dto.response.*;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

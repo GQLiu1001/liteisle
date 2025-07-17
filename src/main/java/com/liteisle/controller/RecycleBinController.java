@@ -1,8 +1,8 @@
 package com.liteisle.controller;
 
 import com.liteisle.common.Result;
-import com.liteisle.common.domain.request.RecycleBinReq;
-import com.liteisle.common.domain.response.RecycleBinContentResp;
+import com.liteisle.common.dto.request.RecycleBinReq;
+import com.liteisle.common.dto.response.RecycleBinContentResp;
 import com.liteisle.service.business.RecycleBinService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -1,6 +1,6 @@
 package com.liteisle.service.business.impl;
 
-import com.liteisle.common.domain.response.MusicViewResp;
+import com.liteisle.common.dto.response.MusicViewResp;
 import com.liteisle.common.exception.LiteisleException;
 import com.liteisle.service.FilesService;
 import com.liteisle.service.FoldersService;

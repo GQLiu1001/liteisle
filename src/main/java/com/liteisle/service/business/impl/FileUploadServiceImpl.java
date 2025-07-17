@@ -1,6 +1,6 @@
 package com.liteisle.service.business.impl;
 
-import com.liteisle.common.domain.response.FileUploadAsyncResp;
+import com.liteisle.common.dto.response.FileUploadAsyncResp;
 import com.liteisle.service.business.FileUploadService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;

@@ -1,6 +1,6 @@
 package com.liteisle.service.business;
 
-import com.liteisle.common.domain.response.DocumentViewResp;
+import com.liteisle.common.dto.response.DocumentViewResp;
 
 public interface DocumentViewService {
 

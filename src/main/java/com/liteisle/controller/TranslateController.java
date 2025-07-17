@@ -1,8 +1,8 @@
 package com.liteisle.controller;
 
 import com.liteisle.common.Result;
-import com.liteisle.common.domain.request.TranslateReq;
-import com.liteisle.common.domain.response.TranslateResp;
+import com.liteisle.common.dto.request.TranslateReq;
+import com.liteisle.common.dto.response.TranslateResp;
 import com.liteisle.service.business.TranslateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

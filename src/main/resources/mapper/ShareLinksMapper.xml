@@ -21,7 +21,7 @@
         expire_time,create_time,update_time
     </sql>
     <select id="getShareRecords"
-            resultType="com.liteisle.common.domain.response.ShareRecordPageResp$ShareRecord">
+            resultType="com.liteisle.common.dto.response.ShareRecordPageResp$ShareRecord">
         SELECT
             s.id,
             s.share_token AS shareToken,

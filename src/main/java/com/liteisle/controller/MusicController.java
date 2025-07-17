@@ -1,7 +1,7 @@
 package com.liteisle.controller;
 
 import com.liteisle.common.Result;
-import com.liteisle.common.domain.response.MusicViewResp;
+import com.liteisle.common.dto.response.MusicViewResp;
 import com.liteisle.service.FilesService;
 import com.liteisle.service.business.MusicViewService;
 import io.swagger.v3.oas.annotations.Operation;

@@ -2,8 +2,8 @@ package com.liteisle.mapper;
 
 import com.liteisle.common.domain.Folders;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.liteisle.common.domain.response.FolderContentResp;
-import com.liteisle.common.domain.response.RecycleBinContentResp;
+import com.liteisle.common.dto.response.FolderContentResp;
+import com.liteisle.common.dto.response.RecycleBinContentResp;
 
 import java.util.List;
 

@@ -1,7 +1,7 @@
 package com.liteisle.service.business.impl;
 
-import com.liteisle.common.domain.request.TranslateReq;
-import com.liteisle.common.domain.response.TranslateResp;
+import com.liteisle.common.dto.request.TranslateReq;
+import com.liteisle.common.dto.response.TranslateResp;
 import com.liteisle.common.exception.LiteisleException;
 import com.liteisle.service.business.TranslateService;
 import jakarta.annotation.Resource;

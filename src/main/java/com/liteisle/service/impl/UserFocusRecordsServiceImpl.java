@@ -2,12 +2,11 @@ package com.liteisle.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.liteisle.common.domain.UserFocusRecords;
 import com.liteisle.common.domain.UserIslands;
-import com.liteisle.common.domain.response.FocusCalendarResp;
-import com.liteisle.common.domain.response.FocusStatsPageResp;
+import com.liteisle.common.dto.response.FocusCalendarResp;
+import com.liteisle.common.dto.response.FocusStatsPageResp;
 import com.liteisle.common.exception.LiteisleException;
 import com.liteisle.module.chain.manager.FocusRewardChainManager;
 import com.liteisle.service.UserFocusRecordsService;
@@ -17,13 +16,9 @@ import com.liteisle.util.SignUtil;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.Date;
 import java.util.List;
 
 /**

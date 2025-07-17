@@ -1,10 +1,9 @@
 package com.liteisle.mapper;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.liteisle.common.domain.UserFocusRecords;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.liteisle.common.domain.response.FocusStatsPageResp;
+import com.liteisle.common.dto.response.FocusStatsPageResp;
 import org.apache.ibatis.annotations.Select;
 
 /**

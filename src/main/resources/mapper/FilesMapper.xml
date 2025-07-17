@@ -25,7 +25,7 @@
         update_time
     </sql>
     <select id="getMusicViewWithContent"
-            resultType="com.liteisle.common.domain.response.MusicViewResp$MusicFile">
+            resultType="com.liteisle.common.dto.response.MusicViewResp$MusicFile">
         select
         f.id,
         f.folder_id,
@@ -49,7 +49,7 @@
         </if>
     </select>
     <select id="getRecycleBinViewWithContent"
-            resultType="com.liteisle.common.domain.response.RecycleBinContentResp$FileItem">
+            resultType="com.liteisle.common.dto.response.RecycleBinContentResp$FileItem">
         select
         f.id as original_id,
         f.file_name as original_name,
@@ -69,7 +69,7 @@
         </if>
     </select>
     <!-- File Mapper XML (例如: FilesMapper.xml) -->
-    <select id="getFolderContentWithSort" resultType="com.liteisle.common.domain.response.FolderContentResp$FileItem">
+    <select id="getFolderContentWithSort" resultType="com.liteisle.common.dto.response.FolderContentResp$FileItem">
         select
         f.id,
         f.folder_id,

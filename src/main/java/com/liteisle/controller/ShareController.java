@@ -3,20 +3,18 @@ package com.liteisle.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.liteisle.common.Result;
-import com.liteisle.common.domain.request.ShareCreateReq;
-import com.liteisle.common.domain.request.ShareSaveReq;
-import com.liteisle.common.domain.request.ShareVerifyReq;
-import com.liteisle.common.domain.response.ShareCreateResp;
-import com.liteisle.common.domain.response.ShareInfoResp;
-import com.liteisle.common.domain.response.ShareRecordPageResp;
-import com.liteisle.common.domain.response.ShareSaveAsyncResp;
+import com.liteisle.common.dto.request.ShareCreateReq;
+import com.liteisle.common.dto.request.ShareSaveReq;
+import com.liteisle.common.dto.request.ShareVerifyReq;
+import com.liteisle.common.dto.response.ShareCreateResp;
+import com.liteisle.common.dto.response.ShareInfoResp;
+import com.liteisle.common.dto.response.ShareRecordPageResp;
+import com.liteisle.common.dto.response.ShareSaveAsyncResp;
 import com.liteisle.service.ShareLinksService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/shares")

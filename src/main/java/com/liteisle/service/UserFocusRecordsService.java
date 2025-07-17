@@ -1,11 +1,10 @@
 package com.liteisle.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.liteisle.common.domain.UserFocusRecords;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.liteisle.common.domain.response.FocusCalendarResp;
-import com.liteisle.common.domain.response.FocusStatsPageResp;
+import com.liteisle.common.dto.response.FocusCalendarResp;
+import com.liteisle.common.dto.response.FocusStatsPageResp;
 
 /**
 * @author 11965
