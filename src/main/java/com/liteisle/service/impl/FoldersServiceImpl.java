@@ -5,10 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.liteisle.common.constant.FolderConstant;
 import com.liteisle.common.domain.Folders;
 import com.liteisle.common.domain.request.FolderCreateReq;
-import com.liteisle.common.domain.response.DocumentViewResp;
-import com.liteisle.common.domain.response.FolderHierarchyResp;
-import com.liteisle.common.domain.response.MusicViewResp;
-import com.liteisle.common.domain.response.RecycleBinContentResp;
+import com.liteisle.common.domain.response.*;
 import com.liteisle.common.enums.FolderTypeEnum;
 import com.liteisle.common.exception.LiteisleException;
 import com.liteisle.service.FoldersService;
@@ -154,6 +151,17 @@ public class FoldersServiceImpl extends ServiceImpl<FoldersMapper, Folders>
         }
         return CompletableFuture.supplyAsync(() -> foldersMapper.getRecycleBinViewWithContent(userId, content), virtualThreadPool);
     }
+
+    @Override
+    public CompletableFuture<List<FolderContentResp.FolderItem>> getFolderContentWithSort(
+            Long folderId, String sortBy, Long userId, String sortOrder,String content) {
+        if (userId == null) {
+            return CompletableFuture.completedFuture(Collections.emptyList());
+        }
+        return CompletableFuture.supplyAsync(() -> foldersMapper.getFolderContentWithSort(
+                folderId, sortBy, userId, sortOrder,content), virtualThreadPool);
+    }
+
 
     private MusicViewResp.Playlist convertToPlaylist(Folders item) {
         MusicViewResp.Playlist playlist = new MusicViewResp.Playlist();

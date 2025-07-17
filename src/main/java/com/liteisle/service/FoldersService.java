@@ -3,10 +3,7 @@ package com.liteisle.service;
 import com.liteisle.common.domain.Folders;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.liteisle.common.domain.request.FolderCreateReq;
-import com.liteisle.common.domain.response.DocumentViewResp;
-import com.liteisle.common.domain.response.FolderHierarchyResp;
-import com.liteisle.common.domain.response.MusicViewResp;
-import com.liteisle.common.domain.response.RecycleBinContentResp;
+import com.liteisle.common.domain.response.*;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -61,4 +58,16 @@ public interface FoldersService extends IService<Folders> {
      * @return 回收站文件夹信息
      */
     CompletableFuture<List<RecycleBinContentResp.FolderItem>> getRecycleBinViewWithContent(String content);
+
+    /**
+     * 获取文件夹内容
+     *
+     * @param folderId  文件夹ID
+     * @param sortBy    排序方式
+     * @param sortOrder 排序方式
+     * @return 文件夹内容
+     */
+    CompletableFuture<List<FolderContentResp.FolderItem>> getFolderContentWithSort(
+            Long folderId, String sortBy, Long userId, String sortOrder,String content);
+
 }

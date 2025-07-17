@@ -30,8 +30,10 @@ public class FolderController {
     @GetMapping("/{folder_id}")
     public Result<FolderContentResp> getFolderContent(
             @PathVariable("folder_id") Long folderId,
-            @RequestParam(required = false) String sortBy) {
-        FolderContentResp resp = folderViewService.getFolderContent(folderId, sortBy);
+            @RequestParam(required = false,name = "sort_by") String sortBy,
+            @RequestParam(required = false ,name = "sort_order") String sortOrder,
+            @RequestParam(required = false, name = "content") String  content) {
+        FolderContentResp resp = folderViewService.getFolderContent(folderId, sortBy,sortOrder,content);
         return Result.success(resp);
     }
 

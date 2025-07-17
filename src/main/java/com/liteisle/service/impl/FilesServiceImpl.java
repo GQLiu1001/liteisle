@@ -8,10 +8,7 @@ import com.liteisle.common.domain.Files;
 import com.liteisle.common.domain.Storages;
 import com.liteisle.common.domain.request.MarkdownCreateReq;
 import com.liteisle.common.domain.request.MarkdownUpdateReq;
-import com.liteisle.common.domain.response.DocumentViewResp;
-import com.liteisle.common.domain.response.MarkdownContentResp;
-import com.liteisle.common.domain.response.MusicViewResp;
-import com.liteisle.common.domain.response.RecycleBinContentResp;
+import com.liteisle.common.domain.response.*;
 import com.liteisle.common.enums.FileStatusEnum;
 import com.liteisle.common.enums.FileTypeEnum;
 import com.liteisle.common.exception.LiteisleException;
@@ -199,6 +196,16 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
             return CompletableFuture.completedFuture(Collections.emptyList());
         }
         return CompletableFuture.supplyAsync(() -> filesMapper.getRecycleBinViewWithContent(content, userId), virtualThreadPool);
+    }
+
+    @Override
+    public CompletableFuture<List<FolderContentResp.FileItem>> getFolderContentWithSort(
+            Long folderId, String sortBy, Long userId,String sortOrder,String content) {
+        if (userId == null) {
+            return CompletableFuture.completedFuture(Collections.emptyList());
+        }
+        return CompletableFuture.supplyAsync(() -> filesMapper.getFolderContentWithSort(
+                folderId,sortBy, userId,sortOrder,content), virtualThreadPool);
     }
 
 

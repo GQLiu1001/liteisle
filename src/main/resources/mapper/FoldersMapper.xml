@@ -53,31 +53,90 @@
         GROUP BY f.id
         ORDER BY f.sorted_order ASC
     </select>
-    <select id="getRecycleBinViewWithContent"
-            resultType="com.liteisle.common.domain.response.RecycleBinContentResp$FolderItem">
+    <select id="getRecycleBinViewWithContent" resultType="com.liteisle.common.domain.response.RecycleBinContentResp$FolderItem">
         select
-        f.id AS originalId,
-        f.folder_name AS originalName,
-        f.folder_type AS originalType,
-        (SELECT COUNT(*)
-        FROM files file
-        WHERE file.folder_id = f.id
-        AND file.delete_time IS NULL -- 只统计未被删除的文件
-        ) AS subCount,
-        f.delete_time AS deleteTime,
-        -- 别名改为驼峰式，与 DTO 字段名 (expireTime) 匹配
-        DATE_ADD(f.delete_time, INTERVAL 30 DAY) as expireTime
+        f.id as originalId,
+        f.folder_name as originalName,
+        f.folder_type as originalType,
+        f.delete_time as deleteTime,
+        DATE_ADD(f.delete_time, INTERVAL 30 DAY) as expireTime,
+        -- 使用 count(fi.id) 来统计文件数量
+        count(fi.id) as subCount
         from
         folders f
+        left join
+        files fi on f.id = fi.folder_id
         where
-        f.delete_time IS NOT NULL
-        AND f.user_id = #{userId}
+        f.delete_time is not null
+        and f.user_id = #{userId}
         <if test="content != null and content != ''">
-            AND f.folder_name LIKE CONCAT('%', #{content}, '%')
+            and f.folder_name like concat('%', #{content}, '%')
         </if>
-        -- 推荐按删除时间倒序排列
-        ORDER BY f.delete_time DESC
+        group by
+        f.id, f.folder_name, f.folder_type, f.delete_time
+        order by
+        f.delete_time desc
     </select>
 
+    <select id="getFolderContentWithSort"
+            resultType="com.liteisle.common.domain.response.FolderContentResp$FolderItem">
+        select
+        f.id,
+        f.folder_name,
+        f.folder_type,
+        f.sorted_order,
+        f.create_time,
+        f.update_time,
+        -- 高效地计算子项目总数（文件夹 + 文件），并处理空文件夹的情况
+        (COALESCE(sub_folders.count, 0) + COALESCE(sub_files.count, 0)) as sub_count
+        from
+        folders f
+        left join
+        -- 子查询1: 预先统计每个父文件夹下有多少个子文件夹
+        (
+        select parent_id, count(*) as count
+        from folders
+        where delete_time is null
+        <if test="content != null and content != ''"> -- 使用 and content != '' 更严谨
+            and folder_name like concat('%', #{content}, '%')
+        </if>
+        group by parent_id
+        ) as sub_folders
+        on f.id = sub_folders.parent_id
+        left join
+        -- 子查询2: 预先统计每个文件夹下有多少个文件
+        (
+        select folder_id, count(*) as count
+        from files
+        where delete_time is null
+        <if test="content != null and content != ''"> -- 使用 and content != '' 更严谨
+            and file_name like concat('%', #{content}, '%')
+        </if>
+        group by folder_id
+        ) as sub_files
+        on f.id = sub_files.folder_id
+        where
+        f.delete_time is null
+        and f.parent_id = #{folderId}
+        and f.user_id = #{userId}
+        <if test="content != null and content != ''"> -- 使用 and content != '' 更严谨
+            and f.folder_name like concat('%', #{content}, '%')
+        </if>
+        order by
+        <choose>
+            <when test="sortBy == 'name'">
+                f.folder_name ${sortOrder}, f.id ASC
+            </when>
+            <when test="sortBy == 'create_time'">
+                f.create_time ${sortOrder}, f.id ASC
+            </when>
+            <when test="sortBy == 'update_time'">
+                f.update_time ${sortOrder}, f.id ASC
+            </when>
+            <otherwise>
+                f.sorted_order ${sortOrder}, f.id ASC
+            </otherwise>
+        </choose>
+    </select>
 
 </mapper>

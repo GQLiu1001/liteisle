@@ -10,6 +10,8 @@ import lombok.Getter;
 public enum TransferStatusEnum {
     PROCESSING("processing"),
 
+    PAUSED("paused"),
+
     AVAILABLE("available"),
 
     FAILED("failed"),

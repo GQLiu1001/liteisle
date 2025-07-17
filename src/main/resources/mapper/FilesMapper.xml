@@ -68,4 +68,45 @@
             and f.file_name like concat('%', #{content}, '%')
         </if>
     </select>
+    <!-- File Mapper XML (例如: FilesMapper.xml) -->
+    <select id="getFolderContentWithSort" resultType="com.liteisle.common.domain.response.FolderContentResp$FileItem">
+        select
+        f.id,
+        f.folder_id,
+        f.file_name,
+        f.file_type,
+        f.file_status,
+        f.sorted_order,
+        f.create_time,
+        f.update_time,
+        s.file_size
+        from
+        files f left join storages s on f.storage_id = s.id
+        where
+        f.delete_time is null
+        and f.folder_id = #{folderId}
+        and f.user_id = #{userId}
+        <if test="content != null and content != ''">
+            -- 新增的搜索条件：文件名模糊匹配
+            and f.file_name like concat('%', #{content}, '%')
+        </if>
+        order by
+        <choose>
+            <when test="sortBy == 'name'">
+                f.file_name ${sortOrder}, f.id ASC
+            </when>
+            <when test="sortBy == 'file_size'">
+                s.file_size ${sortOrder}, f.id ASC
+            </when>
+            <when test="sortBy == 'create_time'">
+                f.create_time ${sortOrder}, f.id ASC
+            </when>
+            <when test="sortBy == 'update_time'">
+                f.update_time ${sortOrder}, f.id ASC
+            </when>
+            <otherwise>
+                f.sorted_order ${sortOrder}, f.id ASC
+            </otherwise>
+        </choose>
+    </select>
 </mapper>

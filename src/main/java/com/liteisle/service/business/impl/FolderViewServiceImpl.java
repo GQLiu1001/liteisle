@@ -1,26 +1,125 @@
 package com.liteisle.service.business.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.liteisle.common.domain.Folders;
 import com.liteisle.common.domain.response.FolderContentResp;
+import com.liteisle.common.exception.LiteisleException;
+import com.liteisle.service.FilesService;
+import com.liteisle.service.FoldersService;
 import com.liteisle.service.business.FolderViewService;
+import com.liteisle.util.UserContextHolder;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
+@Slf4j
 @Service
 public class FolderViewServiceImpl implements FolderViewService {
+    @Resource
+    private FoldersService foldersService;
+    @Resource
+    private FilesService filesService;
+    @Resource
+    private ExecutorService virtualThreadPool;
+
     @Override
-    public FolderContentResp getFolderContent(Long folderId, String sortBy) {
-        //TODO 获取文件夹内容
-        List<FolderContentResp.BreadcrumbItem> breadcrumb = new ArrayList<>();
-        List<FolderContentResp.FolderItem> folders = new ArrayList<>();
-        List<FolderContentResp.FileItem> files = new ArrayList<>();
+    public FolderContentResp getFolderContent(Long folderId, String sortBy, String sortOrder, String content) {
+        //获取的是当前folderId底下的数据
+        Long userId = UserContextHolder.getUserId();
+        // 1. 将所有独立的IO操作全部启动为异步任务
+        CompletableFuture<List<FolderContentResp.FolderItem>> folderFuture = getFolderFuture(folderId, sortBy, userId, sortOrder,content);
+        CompletableFuture<List<FolderContentResp.BreadcrumbItem>> breadcrumbFuture = getBreadcrumbFuture(folderId, userId);
 
+        // 只有在非根目录时，才需要查询文件列表
+        CompletableFuture<List<FolderContentResp.FileItem>> fileFuture = (folderId != 0)
+                ? getFileFuture(folderId, sortBy, userId, sortOrder,content)
+                : CompletableFuture.completedFuture(Collections.emptyList());
 
-
-
-
-
-        return new FolderContentResp(breadcrumb, folders, files);
+        // 2. 使用 allOf 组合所有异步任务
+        return CompletableFuture.allOf(folderFuture, fileFuture, breadcrumbFuture)
+                .thenApply(v -> {
+                    try {
+                        return new FolderContentResp(
+                                breadcrumbFuture.get(),
+                                folderFuture.get(),
+                                fileFuture.get()
+                        );
+                    } catch (Exception e) {
+                        // 在实际的 get() 中，异常会被包装成 ExecutionException
+                        log.error("Error getting future results", e);
+                        throw new LiteisleException("获取文件夹内容失败: " + e.getMessage());
+                    }
+                })
+                .exceptionally(ex -> {
+                    log.error("获取文件夹内容时发生异步异常", ex);
+                    // 提供一个有意义的默认空值
+                    return new FolderContentResp(
+                            List.of(new FolderContentResp.BreadcrumbItem(0L, "云盘")),
+                            Collections.emptyList(),
+                            Collections.emptyList()
+                    );
+                })
+                .join(); // 阻塞并等待最终的组合结果
     }
+
+    /**
+     * 【重构】将 getBreadcrumb 包装成异步方法
+     */
+    private CompletableFuture<List<FolderContentResp.BreadcrumbItem>> getBreadcrumbFuture(Long folderId, Long userId) {
+        // 使用 supplyAsync 将耗时的数据库操作提交到线程池
+        return CompletableFuture.supplyAsync(() -> getBreadcrumbSync(folderId, userId), virtualThreadPool);
+    }
+
+    private List<FolderContentResp.BreadcrumbItem> getBreadcrumbSync(Long folderId, Long userId) {
+        List<FolderContentResp.BreadcrumbItem> breadcrumb = new ArrayList<>();
+        breadcrumb.add(new FolderContentResp.BreadcrumbItem(0L, "云盘"));
+        if (folderId == 0) {
+            //根目录 不显示其他
+            return breadcrumb;
+        } else {
+            //不为根目录 两个情况，
+            //首先获得当前文件夹信息
+            Folders currentFolder = foldersService.getOne(new QueryWrapper<Folders>()
+                    .eq("id", folderId).eq("user_id", userId));
+            if (currentFolder == null) {
+                return breadcrumb;
+            }
+            Long parentId = currentFolder.getParentId();
+            Long id = currentFolder.getId();
+            String folderName = currentFolder.getFolderName();
+            if (parentId != 0) {
+                //说明父级不是根目录 是 云盘/歌单/我喜欢的
+                Folders parentFolder = foldersService.getOne(new QueryWrapper<Folders>()
+                        .eq("id", parentId).eq("user_id", userId));
+                // 【安全锁 2】确保父级存在才添加，避免崩溃
+                if (parentFolder != null) {
+                    breadcrumb.add(new FolderContentResp.BreadcrumbItem(parentFolder.getId(), parentFolder.getFolderName()));
+                }
+                breadcrumb.add(new FolderContentResp.BreadcrumbItem(id, folderName));
+                return breadcrumb;
+            } else {
+                //说明父级是根目录 是 云盘/歌单
+                breadcrumb.add(new FolderContentResp.BreadcrumbItem(id, folderName));
+                return breadcrumb;
+            }
+        }
+    }
+
+
+    private CompletableFuture<List<FolderContentResp.FolderItem>> getFolderFuture(
+            Long folderId, String sortBy, Long userId, String sortOrder, String content) {
+        return foldersService.getFolderContentWithSort(folderId, sortBy, userId, sortOrder,content);
+    }
+
+    private CompletableFuture<List<FolderContentResp.FileItem>> getFileFuture(
+            Long folderId, String sortBy, Long userId, String sortOrder, String  content) {
+        return filesService.getFolderContentWithSort(folderId, sortBy, userId, sortOrder,content);
+    }
+
 }

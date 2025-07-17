@@ -4,10 +4,7 @@ import com.liteisle.common.domain.Files;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.liteisle.common.domain.request.MarkdownCreateReq;
 import com.liteisle.common.domain.request.MarkdownUpdateReq;
-import com.liteisle.common.domain.response.DocumentViewResp;
-import com.liteisle.common.domain.response.MarkdownContentResp;
-import com.liteisle.common.domain.response.MusicViewResp;
-import com.liteisle.common.domain.response.RecycleBinContentResp;
+import com.liteisle.common.domain.response.*;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -81,4 +78,14 @@ public interface FilesService extends IService<Files> {
      * @return 回收站页面信息
      */
     CompletableFuture<List<RecycleBinContentResp.FileItem>> getRecycleBinViewWithContent(String content);
+    /**
+     * 获取文件夹内容
+     *
+     * @param folderId 文件夹id
+     * @param sortBy  排序方式
+     * @param sortOrder 排序方式
+     * @return 文件夹内容
+     */
+    CompletableFuture<List<FolderContentResp.FileItem>> getFolderContentWithSort(
+            Long folderId, String sortBy, Long userId ,String sortOrder, String content);
 }

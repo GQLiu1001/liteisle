@@ -2,6 +2,7 @@ package com.liteisle.mapper;
 
 import com.liteisle.common.domain.Files;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.liteisle.common.domain.response.FolderContentResp;
 import com.liteisle.common.domain.response.MusicViewResp;
 import com.liteisle.common.domain.response.RecycleBinContentResp;
 
@@ -18,6 +19,8 @@ public interface FilesMapper extends BaseMapper<Files> {
     List<MusicViewResp.MusicFile> getMusicViewWithContent(String content, Long userId);
 
     List<RecycleBinContentResp.FileItem> getRecycleBinViewWithContent(String content, Long userId);
+
+    List<FolderContentResp.FileItem> getFolderContentWithSort(Long folderId, String sortBy, Long userId ,String sortOrder);
 }
 
 

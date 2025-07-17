@@ -10,5 +10,5 @@ public interface FolderViewService {
      * @param sortBy   排序字段，可选值: `name`, `file_size`, `create_time`, `update_time`, `sorted_order` (默认)
      * @return 文件夹内容
      */
-    FolderContentResp getFolderContent(Long folderId, String sortBy);
+    FolderContentResp getFolderContent(Long folderId, String sortBy ,String sortOrder,String content);
 }
