@@ -2,6 +2,7 @@ package com.liteisle.service.business.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.liteisle.common.domain.Files;
 import com.liteisle.common.domain.Folders;
@@ -171,18 +172,47 @@ public class ItemViewServiceImpl implements ItemViewService {
             throw new LiteisleException("请求文件类型错误");
         }
         Long userId = UserContextHolder.getUserId();
+//        if (itemType.equals("folder")) {
+//            Folders one = foldersService.getOne(new QueryWrapper<Folders>()
+//                    .eq("id", itemId)
+//                    .eq("user_id", userId)
+//            );
+//            long count = filesService.count(new QueryWrapper<Files>().eq("folder_id", itemId));
+//            String path = getRelativePath(one.getId(), one.getFolderName());
+//            return new ItemDetailResp(
+//                    one.getId(),
+//                    one.getFolderName(),
+//                    ItemType.FOLDER,
+//                    count,
+//                    path,
+//                    one.getCreateTime(),
+//                    one.getUpdateTime()
+//            );
+//        }
         if (itemType.equals("folder")) {
             Folders one = foldersService.getOne(new QueryWrapper<Folders>()
                     .eq("id", itemId)
                     .eq("user_id", userId)
             );
-            long count = filesService.count(new QueryWrapper<Files>().eq("folder_id", itemId));
+
+            // 分别统计文件和文件夹的数量，并确保都加上了 user_id 条件
+            long fileCount = filesService.count(new LambdaQueryWrapper<Files>()
+                    .eq(Files::getFolderId, itemId)
+                    .eq(Files::getUserId, userId));
+
+            long folderCount = foldersService.count(new LambdaQueryWrapper<Folders>()
+                    .eq(Folders::getParentId, itemId)
+                    .eq(Folders::getUserId, userId));
+
+            // 计算总数
+            long totalCount = fileCount + folderCount;
+
             String path = getRelativePath(one.getId(), one.getFolderName());
             return new ItemDetailResp(
                     one.getId(),
                     one.getFolderName(),
                     ItemType.FOLDER,
-                    count,
+                    totalCount, // <-- 使用修正后的总数
                     path,
                     one.getCreateTime(),
                     one.getUpdateTime()
