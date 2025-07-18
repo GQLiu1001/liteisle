@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/items")
 @Tag(name = "项目操作接口")
 public class ItemController {
-    //TODO 待测试
     @Resource
     private ItemViewService itemViewService;
 

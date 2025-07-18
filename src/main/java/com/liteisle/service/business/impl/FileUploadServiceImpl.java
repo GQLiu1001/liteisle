@@ -48,8 +48,6 @@ public class FileUploadServiceImpl implements FileUploadService {
     @Resource
     private AsyncFileProcessingCenter asyncFileProcessingCenter;
 
-    //TODO 链接 transfer websocket链
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileUploadAsyncResp uploadFile(MultipartFile file, Long folderId) {

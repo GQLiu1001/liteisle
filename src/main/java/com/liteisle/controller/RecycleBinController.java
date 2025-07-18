@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/recycle-bin")
 @Tag(name = "回收站接口")
 public class RecycleBinController {
-    //TODO 待测试
     @Resource
     private RecycleBinService recycleBinService;
 

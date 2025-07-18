@@ -25,7 +25,6 @@ public class MusicController {
     @GetMapping
     public Result<MusicViewResp> getMusicView(
             @RequestParam(required = false) String content) {
-        //TODO 待测试
         MusicViewResp musicViewResp = musicViewService.getMusicView(content);
         return Result.success(musicViewResp);
     }
@@ -36,7 +35,6 @@ public class MusicController {
     @Operation(summary = " 获取音乐播放链接", description = " 获取音乐播放链接")
     @GetMapping("/{file_id}/play")
     public Result<String> getMusicPlayUrl(@PathVariable("file_id") Long fileId) {
-        //TODO 待测试
         String url = filesService.getMusicPlayUrl(fileId);
         return Result.success(url);
     }

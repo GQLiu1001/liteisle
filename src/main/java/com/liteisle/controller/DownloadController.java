@@ -27,7 +27,6 @@ public class DownloadController {
     @Operation(summary = "下载文件", description = "所有下载到本地操作的唯一入口。")
     @PostMapping("/create")
     public Result<DownloadSessionResp> registerDownload(@RequestBody ItemsSelectionReq req) {
-        //TODO 待测试
         DownloadSessionResp resp = downloadService.registerDownload(req);
         return Result.success(resp);
     }
