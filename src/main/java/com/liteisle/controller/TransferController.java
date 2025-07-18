@@ -92,6 +92,7 @@ public class TransferController {
     @Operation(summary = "取消上传任务。", description = "取消上传任务")
     @PostMapping("/upload/{log_id}/cancel")
     public Result<Void> cancelUploadMission(@PathVariable("log_id") Long logId) {
+        transferLogService.cancelUploadMission(logId);
         return Result.success();
     }
 }

@@ -1,7 +1,5 @@
 package com.liteisle.common.domain;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -34,10 +32,6 @@ public class MusicMetadata {
      */
     private Integer duration;
 
-    /**
-     * 专辑封面图的URL
-     */
-    private String coverArtUrl;
 
     @Override
     public boolean equals(Object that) {
@@ -54,8 +48,7 @@ public class MusicMetadata {
         return (this.getFileId() == null ? other.getFileId() == null : this.getFileId().equals(other.getFileId()))
             && (this.getArtist() == null ? other.getArtist() == null : this.getArtist().equals(other.getArtist()))
             && (this.getAlbum() == null ? other.getAlbum() == null : this.getAlbum().equals(other.getAlbum()))
-            && (this.getDuration() == null ? other.getDuration() == null : this.getDuration().equals(other.getDuration()))
-            && (this.getCoverArtUrl() == null ? other.getCoverArtUrl() == null : this.getCoverArtUrl().equals(other.getCoverArtUrl()));
+            && (this.getDuration() == null ? other.getDuration() == null : this.getDuration().equals(other.getDuration()));
     }
 
     @Override
@@ -66,7 +59,6 @@ public class MusicMetadata {
         result = prime * result + ((getArtist() == null) ? 0 : getArtist().hashCode());
         result = prime * result + ((getAlbum() == null) ? 0 : getAlbum().hashCode());
         result = prime * result + ((getDuration() == null) ? 0 : getDuration().hashCode());
-        result = prime * result + ((getCoverArtUrl() == null) ? 0 : getCoverArtUrl().hashCode());
         return result;
     }
 
@@ -80,7 +72,6 @@ public class MusicMetadata {
         sb.append(", artist=").append(artist);
         sb.append(", album=").append(album);
         sb.append(", duration=").append(duration);
-        sb.append(", coverArtUrl=").append(coverArtUrl);
         sb.append("]");
         return sb.toString();
     }

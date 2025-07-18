@@ -27,16 +27,4 @@ public class UploadController {
         FileUploadAsyncResp resp = fileUploadService.uploadFile(file, folderId);
         return Result.success(resp);
     }
-
-    /**
-     * 图片上传接口（专门处理md文档图片）
-     */
-    @Operation(summary = "图片上传接口（专门处理md文档图片）", description = "图片上传接口（专门处理md文档图片）")
-    @PostMapping("/upload/image")
-    public Result<String> uploadMdImage(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam Long file_id) {
-        String url = fileUploadService.uploadMdImage(file, file_id);
-        return Result.success(url);
-    }
 }

@@ -200,7 +200,7 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
         //主要影响：file -》 storages 引用次数变多 且保存在用户自定义路径（默认为用户的分享文件夹下）
         // folder -》 file -》 storages 引用次数变多 且保存在用户自定义路径（默认为用户的分享文件夹下）
         //链接： transfer log 与 websocket 通信
-        //TODO 开启传输任务链
+        //TODO 链接 transfer websocket链
         return null;
     }
 

@@ -116,6 +116,11 @@ public class TransferLogServiceImpl extends ServiceImpl<TransferLogMapper, Trans
         });
     }
 
+    @Override
+    public void cancelUploadMission(Long logId) {
+        //TODO 链接 transfer websocket链
+    }
+
     private void dealOneLog(Long userId, Long logId, Boolean deleteFile) {
         // 1. 验证并软删除传输日志本身
         TransferLog transferLog = this.getOne(new QueryWrapper<TransferLog>()

@@ -51,4 +51,11 @@ public interface TransferLogService extends IService<TransferLog> {
      * @param deleteFile 是否删除文件
      */
     void completedCleanTransferLog(Boolean deleteFile);
+
+    /**
+     * 取消上传任务
+     *
+     * @param logId 日志ID
+     */
+    void cancelUploadMission(Long logId);
 }
