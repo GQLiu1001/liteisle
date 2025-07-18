@@ -2,12 +2,14 @@ package com.liteisle.common.dto.response;
 
 import com.liteisle.common.enums.FileStatusEnum;
 import com.liteisle.common.enums.FileTypeEnum;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.Date;
 import java.util.List;
 
 @Data
+@AllArgsConstructor
 public class ShareSaveAsyncResp {
     private Integer totalFilesToSave;
     private List<InitialFileData> initialFileDataList;

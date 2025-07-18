@@ -1,5 +1,6 @@
 package com.liteisle.center;
 
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.liteisle.common.domain.Files;
 import com.liteisle.common.domain.MusicMetadata;
 import com.liteisle.common.domain.Storages;
@@ -24,9 +25,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
 
 import static com.liteisle.common.constant.SystemConstant.DATA_BUCKET_PREFIX;
 
@@ -48,6 +49,79 @@ public class AsyncFileProcessingCenter {
     private TransferLogService transferLogService;
     @Resource
     private WebSocketHandler webSocketHandler; // 用于发送实时通知
+
+    /**
+     * 【新增】异步处理转存分享文件的任务。
+     * 它的核心工作是更新引用计数和文件/日志状态。
+     *
+     * @param sharerId          分享者的用户ID
+     * @param receiverId        接收者（当前登录用户）的用户ID
+     * @param filesToSave       新创建的、状态为PROCESSING的Files记录列表
+     * @param logsToUpdate      新创建的、状态为PROCESSING的TransferLog记录列表
+     */
+    @Async("virtualThreadPool")
+    @Transactional(rollbackFor = Exception.class)
+    public void processSharedFilesSave(
+            Long sharerId,
+            Long receiverId,
+            List<Files> filesToSave,
+            List<TransferLog> logsToUpdate) {
+
+        try {
+            for (int i = 0; i < filesToSave.size(); i++) {
+                Files newFileRecord = filesToSave.get(i);
+                TransferLog logRecord = logsToUpdate.get(i);
+
+                // 1. 找到原始文件记录来获取 storage_id
+                // (注意：这里假设分享的文件/文件夹在转存期间没有被分享者删除)
+                Files originalFile = filesService.getById(logRecord.getFileId());
+                if (originalFile == null || originalFile.getStorageId() == null) {
+                    // 如果源文件没了，标记此文件失败
+                    updateFileStatus(newFileRecord.getId(), FileStatusEnum.FAILED);
+                    updateTransferLog(logRecord.getId(), TransferStatusEnum.FAILED, "源文件已不存在");
+                    continue; // 继续处理下一个文件
+                }
+
+                // 2. 关联 Storage ID 并更新引用计数
+                newFileRecord.setStorageId(originalFile.getStorageId());
+                storagesService.update(new UpdateWrapper<Storages>()
+                        .eq("id", originalFile.getStorageId())
+                        .setSql("reference_count = reference_count + 1"));
+
+                // 3. 如果是音乐文件，复制元数据
+                if (Objects.equals(newFileRecord.getFileType(), FileTypeEnum.MUSIC)) {
+                    MusicMetadata originalMetadata = musicMetadataService.getById(originalFile.getId());
+                    if (originalMetadata != null) {
+                        MusicMetadata newMetadata = new MusicMetadata();
+                        newMetadata.setFileId(newFileRecord.getId());
+                        newMetadata.setArtist(originalMetadata.getArtist());
+                        newMetadata.setAlbum(originalMetadata.getAlbum());
+                        newMetadata.setDuration(originalMetadata.getDuration());
+                        musicMetadataService.save(newMetadata);
+                    }
+                }
+
+                // 4. 更新文件和日志状态为成功
+                updateFileStatus(newFileRecord.getId(), FileStatusEnum.AVAILABLE);
+                updateTransferLog(logRecord.getId(), TransferStatusEnum.SUCCESS, null);
+
+                // 5. 更新新文件记录本身（主要是为了保存storage_id）
+                filesService.updateById(newFileRecord);
+            }
+
+            log.info("用户 {} 成功转存了 {} 个文件", receiverId, filesToSave.size());
+            // 8. WebSocket 通知前端 (可以发送一个聚合事件或多个单独事件)
+            // webSocketHandler.sendMessageToUser(receiverId, "{\"event\": \"share.save.completed\", ...}");
+
+        } catch (Exception e) {
+            log.error("异步转存分享文件失败. ReceiverId: {}", receiverId, e);
+            // 如果整个批次失败，将所有相关记录标记为失败
+            filesToSave.forEach(file -> updateFileStatus(file.getId(), FileStatusEnum.FAILED));
+            logsToUpdate.forEach(log -> updateTransferLog(log.getId(), TransferStatusEnum.FAILED, "内部服务器错误"));
+            // webSocketHandler.sendMessageToUser(...);
+        }
+    }
+
     @Async("virtualThreadPool") // 使用你的虚拟线程池执行异步任务
     @Transactional(rollbackFor = Exception.class)
     public void processNewFile(MultipartFile multipartFile, String fileHash, Long fileId, Long logId) {
