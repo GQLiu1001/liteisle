@@ -1,6 +1,6 @@
 package com.liteisle.config.interceptor;
 
-import com.liteisle.util.JwtUtil; // 引入你之前写的JwtUtil
+import com.liteisle.util.JwtUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.ServerHttpRequest;
@@ -12,7 +12,7 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 import java.util.Map;
 
 @Slf4j
-@Component // 同样，让 Spring 管理
+@Component
 public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 
     @Resource

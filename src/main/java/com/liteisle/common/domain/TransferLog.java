@@ -1,7 +1,6 @@
 package com.liteisle.common.domain;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
@@ -10,7 +9,6 @@ import java.util.Date;
 import com.liteisle.common.enums.TransferStatusEnum;
 import com.liteisle.common.enums.TransferTypeEnum;
 import lombok.Data;
-import org.apache.logging.log4j.internal.LogManagerStatus;
 
 /**
  * 文件上传下载行为日志表

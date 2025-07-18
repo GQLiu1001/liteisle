@@ -15,10 +15,10 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 @Slf4j
 @Component
 public class WebSocketEventListener {
-    
+
     @Resource
     private WebSocketHandler webSocketHandler;
-    
+
     /**
      * 处理WebSocket连接建立事件
      */
@@ -28,15 +28,15 @@ public class WebSocketEventListener {
             // 获取当前在线用户数
             int onlineCount = webSocketHandler.getOnlineUserCount();
             log.info("WebSocket连接建立，当前在线用户数: {}", onlineCount);
-            
+
             // 这里可以添加更多连接建立时的业务逻辑
             // 例如：记录用户上线时间、发送欢迎消息等
-            
+
         } catch (Exception e) {
             log.error("处理WebSocket连接事件时发生错误", e);
         }
     }
-    
+
     /**
      * 处理WebSocket连接断开事件
      */
@@ -46,10 +46,10 @@ public class WebSocketEventListener {
             // 获取当前在线用户数
             int onlineCount = webSocketHandler.getOnlineUserCount();
             log.info("WebSocket连接断开，当前在线用户数: {}", onlineCount);
-            
+
             // 这里可以添加更多连接断开时的业务逻辑
             // 例如：记录用户下线时间、清理相关资源等
-            
+
         } catch (Exception e) {
             log.error("处理WebSocket断开事件时发生错误", e);
         }

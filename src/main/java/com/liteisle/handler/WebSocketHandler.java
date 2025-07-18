@@ -1,6 +1,5 @@
 package com.liteisle.handler;
 
-import com.liteisle.util.UserContextHolder; // 假设你有类似工具
 import com.liteisle.common.constant.WebSocketMessageType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -92,7 +91,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
             log.debug("尝试向 userId: {} 发送消息，但用户不在线或 session 已关闭。", userId);
         }
     }
-    
+
     /**
      * 向所有在线用户广播消息
      * @param payload JSON 格式的消息体字符串
@@ -120,7 +119,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     public int getOnlineUserCount() {
         return SESSIONS.size();
     }
-    
+
     /**
      * 检查用户是否在线
      * @param userId 用户ID

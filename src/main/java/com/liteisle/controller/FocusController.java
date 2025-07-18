@@ -27,7 +27,7 @@ public class FocusController {
     @PostMapping("/records")
     public Result<String> createFocusRecord(@RequestParam("focus_minutes") Integer min) {
         String url = userFocusRecordsService.createFocusRecord(min);
-        return url==null?Result.success():Result.success(url);
+        return url == null ? Result.success() : Result.success(url);
     }
 
     /**
@@ -47,7 +47,7 @@ public class FocusController {
     @GetMapping("/stats/records")
     public Result<FocusStatsPageResp> getFocusRecords(
             @RequestParam(defaultValue = "1", name = "page") Integer current,
-            @RequestParam(defaultValue = "10",name = "size") Integer size) {
+            @RequestParam(defaultValue = "10", name = "size") Integer size) {
         IPage<FocusStatsPageResp.FocusRecord> page = new Page<>(current, size);
         IPage<FocusStatsPageResp.FocusRecord> pageData = userFocusRecordsService.getFocusRecords(page);
         FocusStatsPageResp focusStatsPageResp = new FocusStatsPageResp();

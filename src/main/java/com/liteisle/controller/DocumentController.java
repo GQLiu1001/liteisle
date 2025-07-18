@@ -30,7 +30,7 @@ public class DocumentController {
     @Operation(summary = "获取文档页面信息", description = "获取文档页面信息")
     @GetMapping
     public Result<DocumentViewResp> getDocumentView(@RequestParam(required = false) String content) {
-        DocumentViewResp resp =  documentViewService.getDocumentView(content);
+        DocumentViewResp resp = documentViewService.getDocumentView(content);
         return Result.success(resp);
     }
 

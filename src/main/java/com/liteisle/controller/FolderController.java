@@ -18,9 +18,9 @@ import java.util.List;
 @Tag(name = "文件夹接口")
 public class FolderController {
     @Resource
-    private FolderViewService folderViewService ;
+    private FolderViewService folderViewService;
     @Resource
-    private FoldersService foldersService ;
+    private FoldersService foldersService;
 
     /**
      * 获取指定文件夹内容
@@ -29,10 +29,10 @@ public class FolderController {
     @GetMapping("/{folder_id}")
     public Result<FolderContentResp> getFolderContent(
             @PathVariable("folder_id") Long folderId,
-            @RequestParam(required = false,name = "sort_by") String sortBy,
-            @RequestParam(required = false ,name = "sort_order") String sortOrder,
-            @RequestParam(required = false, name = "content") String  content) {
-        FolderContentResp resp = folderViewService.getFolderContent(folderId, sortBy,sortOrder,content);
+            @RequestParam(required = false, name = "sort_by") String sortBy,
+            @RequestParam(required = false, name = "sort_order") String sortOrder,
+            @RequestParam(required = false, name = "content") String content) {
+        FolderContentResp resp = folderViewService.getFolderContent(folderId, sortBy, sortOrder, content);
         return Result.success(resp);
     }
 

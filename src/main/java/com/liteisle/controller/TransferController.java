@@ -90,11 +90,11 @@ public class TransferController {
     /**
      * 取消上传任务
      */
-    @Operation(summary = "取消上传任务", 
-               description = "取消一个正在进行的上传任务。此操作会中断文件传输，并清理服务器上已接收的该文件的临时数据（恢复用户额度）。")
+    @Operation(summary = "取消上传任务",
+            description = "取消一个正在进行的上传任务。此操作会中断文件传输，并清理服务器上已接收的该文件的临时数据（恢复用户额度）。")
     @PostMapping("/upload/{log_id}/cancel")
     public Result<String> cancelUploadMission(
-            @Parameter(description = "要取消的上传任务的传输日志ID") 
+            @Parameter(description = "要取消的上传任务的传输日志ID")
             @PathVariable("log_id") Long logId) {
         transferLogService.cancelUploadMission(logId);
         return Result.success("上传任务已取消");

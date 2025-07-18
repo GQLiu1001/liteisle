@@ -18,19 +18,19 @@ public class MusicController {
     private MusicViewService musicViewService;
     @Resource
     private FilesService filesService;
+
     /**
      * 获取音乐页面信息
      */
     @Operation(summary = "获取音乐页面信息", description = "获取音乐页面信息")
     @GetMapping
-    public Result<MusicViewResp> getMusicView(
-            @RequestParam(required = false) String content) {
+    public Result<MusicViewResp> getMusicView(@RequestParam(required = false) String content) {
         MusicViewResp musicViewResp = musicViewService.getMusicView(content);
         return Result.success(musicViewResp);
     }
 
     /**
-     *  获取音乐播放链接
+     * 获取音乐播放链接
      */
     @Operation(summary = " 获取音乐播放链接", description = " 获取音乐播放链接")
     @GetMapping("/{file_id}/play")

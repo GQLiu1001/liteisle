@@ -60,8 +60,8 @@ public class ShareController {
     @Operation(summary = "获取我的分享记录", description = "获取我的分享记录")
     @GetMapping("/me")
     public Result<ShareRecordPageResp> getShareRecords(
-            @RequestParam(defaultValue = "1",name = "page") Integer current,
-            @RequestParam(defaultValue = "10",name = "size") Integer size) {
+            @RequestParam(defaultValue = "1", name = "page") Integer current,
+            @RequestParam(defaultValue = "10", name = "size") Integer size) {
         IPage<ShareRecordPageResp.ShareRecord> page = new Page<>(current, size);
         IPage<ShareRecordPageResp.ShareRecord> pageData = shareLinksService.getShareRecords(page);
         ShareRecordPageResp shareRecordPageResp = new ShareRecordPageResp();

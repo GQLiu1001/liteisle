@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @ResponseBody
 public class GlobalExceptionHandler {
     @ExceptionHandler(LiteisleException.class)
-    public Result<?> handleLianqingException(LiteisleException e) {
+    public Result<?> handleLiteisleException(LiteisleException e) {
         log.error(e.getMessage(), e);
         return Result.fail(e.getMessage());}
 
