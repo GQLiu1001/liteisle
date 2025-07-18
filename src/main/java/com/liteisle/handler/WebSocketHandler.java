@@ -1,6 +1,7 @@
 package com.liteisle.handler;
 
 import com.liteisle.util.UserContextHolder; // 假设你有类似工具
+import com.liteisle.common.constant.WebSocketMessageType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -44,9 +45,18 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        // 你的文档目前没有定义 C2S (客户端到服务端) 的消息
-        // 这里可以处理心跳包等逻辑，例如客户端定时发送 "ping"
-        log.info("收到来自 userId: {} 的消息: {}", session.getAttributes().get("userId"), message.getPayload());
+        String payload = message.getPayload();
+        Long userId = (Long) session.getAttributes().get("userId");
+        
+        // 处理心跳包
+        if (WebSocketMessageType.HEARTBEAT_PING.equals(payload)) {
+            session.sendMessage(new TextMessage(WebSocketMessageType.HEARTBEAT_PONG));
+            log.debug("收到来自 userId: {} 的心跳包，已回复pong", userId);
+            return;
+        }
+        
+        // 处理其他消息类型
+        log.info("收到来自 userId: {} 的消息: {}", userId, payload);
     }
 
     @Override
@@ -72,12 +82,52 @@ public class WebSocketHandler extends TextWebSocketHandler {
         if (session != null && session.isOpen()) {
             try {
                 session.sendMessage(new TextMessage(payload));
-                log.info("成功向 userId: {} 发送消息: {}", userId, payload);
+                log.debug("成功向 userId: {} 发送消息", userId);
             } catch (IOException e) {
                 log.error("向 userId: {} 发送消息失败: {}", userId, e.getMessage());
+                // 如果发送失败，移除无效的session
+                SESSIONS.remove(userId);
             }
         } else {
-            log.warn("尝试向 userId: {} 发送消息，但用户不在线或 session 已关闭。", userId);
+            log.debug("尝试向 userId: {} 发送消息，但用户不在线或 session 已关闭。", userId);
         }
+    }
+    
+    /**
+     * 向所有在线用户广播消息
+     * @param payload JSON 格式的消息体字符串
+     */
+    public void broadcastMessage(String payload) {
+        SESSIONS.forEach((userId, session) -> {
+            if (session.isOpen()) {
+                try {
+                    session.sendMessage(new TextMessage(payload));
+                } catch (IOException e) {
+                    log.error("向 userId: {} 广播消息失败: {}", userId, e.getMessage());
+                    SESSIONS.remove(userId);
+                }
+            } else {
+                SESSIONS.remove(userId);
+            }
+        });
+        log.info("广播消息给 {} 个在线用户", SESSIONS.size());
+    }
+    
+    /**
+     * 获取当前在线用户数量
+     * @return 在线用户数量
+     */
+    public int getOnlineUserCount() {
+        return SESSIONS.size();
+    }
+    
+    /**
+     * 检查用户是否在线
+     * @param userId 用户ID
+     * @return 是否在线
+     */
+    public boolean isUserOnline(Long userId) {
+        WebSocketSession session = SESSIONS.get(userId);
+        return session != null && session.isOpen();
     }
 }

@@ -5,10 +5,10 @@ import com.liteisle.common.domain.Files;
 import com.liteisle.common.domain.MusicMetadata;
 import com.liteisle.common.domain.Storages;
 import com.liteisle.common.domain.TransferLog;
+import com.liteisle.common.dto.websocket.ShareSaveCompletedMessage;
 import com.liteisle.common.enums.FileStatusEnum;
 import com.liteisle.common.enums.FileTypeEnum;
 import com.liteisle.common.enums.TransferStatusEnum;
-import com.liteisle.handler.WebSocketHandler; // 假设你的WebSocket处理器
 import com.liteisle.service.core.FilesService;
 import com.liteisle.service.core.MusicMetadataService;
 import com.liteisle.service.core.StoragesService;
@@ -16,6 +16,7 @@ import com.liteisle.service.core.TransferLogService;
 import com.liteisle.util.FFmpegUtil;
 import com.liteisle.util.MimeTypeUtil;
 import com.liteisle.util.MinioUtil;
+import com.liteisle.service.business.WebSocketService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -25,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,7 +50,7 @@ public class AsyncFileProcessingCenter {
     @Resource
     private TransferLogService transferLogService;
     @Resource
-    private WebSocketHandler webSocketHandler; // 用于发送实时通知
+    private WebSocketService webSocketService;
 
     /**
      * 【新增】异步处理转存分享文件的任务。
@@ -110,15 +112,37 @@ public class AsyncFileProcessingCenter {
             }
 
             log.info("用户 {} 成功转存了 {} 个文件", receiverId, filesToSave.size());
-            // 8. WebSocket 通知前端 (可以发送一个聚合事件或多个单独事件)
-            // webSocketHandler.sendMessageToUser(receiverId, "{\"event\": \"share.save.completed\", ...}");
+            
+            // 8. WebSocket 通知前端转存完成
+            ShareSaveCompletedMessage shareMessage = new ShareSaveCompletedMessage(
+                    filesToSave.size(),
+                    filesToSave.size(),
+                    0,
+                    filesToSave.getFirst().getFolderId(),
+                    sharerId,
+                    new ArrayList<>()
+            );
+            webSocketService.sendShareSaveCompleted(receiverId, shareMessage);
 
         } catch (Exception e) {
             log.error("异步转存分享文件失败. ReceiverId: {}", receiverId, e);
             // 如果整个批次失败，将所有相关记录标记为失败
             filesToSave.forEach(file -> updateFileStatus(file.getId(), FileStatusEnum.FAILED));
             logsToUpdate.forEach(log -> updateTransferLog(log.getId(), TransferStatusEnum.FAILED, "内部服务器错误"));
-            // webSocketHandler.sendMessageToUser(...);
+            
+            // WebSocket 通知前端转存失败
+            List<String> failedFileNames = filesToSave.stream()
+                    .map(Files::getFileName)
+                    .toList();
+            ShareSaveCompletedMessage shareMessage = new ShareSaveCompletedMessage(
+                    filesToSave.size(),
+                    0,
+                    filesToSave.size(),
+                    filesToSave.isEmpty() ? null : filesToSave.getFirst().getFolderId(),
+                    sharerId,
+                    failedFileNames
+            );
+            webSocketService.sendShareSaveFailed(receiverId, shareMessage);
         }
     }
 
@@ -168,9 +192,11 @@ public class AsyncFileProcessingCenter {
             updateTransferLog(logId, TransferStatusEnum.SUCCESS, null);
 
             log.info("文件处理成功. FileId: {}, LogId: {}", fileId, logId);
-            // 8. WebSocket 通知前端
-            // webSocketHandler.sendMessageToUser(
-            // fileRecord.getUserId(), "{\"event\": \"file.status.updated\", ...}");
+            
+            // 8. WebSocket 通知前端文件处理完成
+            webSocketService.sendFileStatusUpdate(
+                    fileRecord.getUserId(), fileId, logId, FileStatusEnum.AVAILABLE, TransferStatusEnum.SUCCESS, fileRecord.getFileName(), null, 100
+            );
 
 
         } catch (Exception e) {
@@ -178,7 +204,14 @@ public class AsyncFileProcessingCenter {
             // 发生任何异常，都将状态更新为失败
             updateFileStatus(fileId, FileStatusEnum.FAILED);
             updateTransferLog(logId, TransferStatusEnum.FAILED, e.getMessage());
-            // webSocketHandler.sendMessageToUser(...);
+            
+            // WebSocket 通知前端文件处理失败
+            Files fileRecord = filesService.getById(fileId);
+            if (fileRecord != null) {
+                webSocketService.sendFileStatusUpdate(
+                        fileRecord.getUserId(), fileId, logId, FileStatusEnum.FAILED, TransferStatusEnum.FAILED, fileRecord.getFileName(), e.getMessage(), 0
+                );
+            }
         } finally {
             // 9. 确保临时文件被删除
             if (tempFile != null && tempFile.exists()) {

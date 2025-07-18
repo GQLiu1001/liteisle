@@ -6,16 +6,22 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.liteisle.common.domain.Files;
 import com.liteisle.common.domain.Folders;
+import com.liteisle.common.domain.Storages;
 import com.liteisle.common.domain.TransferLog;
+import com.liteisle.common.domain.Users;
 import com.liteisle.common.dto.request.TransferStatusUpdateReq;
 import com.liteisle.common.dto.response.TransferLogPageResp;
 import com.liteisle.common.dto.response.TransferSummaryResp;
+import com.liteisle.common.enums.FileStatusEnum;
 import com.liteisle.common.enums.TransferStatusEnum;
 import com.liteisle.common.enums.TransferTypeEnum;
 import com.liteisle.common.exception.LiteisleException;
+import com.liteisle.service.business.WebSocketService;
 import com.liteisle.service.core.FilesService;
 import com.liteisle.service.core.FoldersService;
+import com.liteisle.service.core.StoragesService;
 import com.liteisle.service.core.TransferLogService;
+import com.liteisle.service.core.UsersService;
 import com.liteisle.mapper.TransferLogMapper;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;
@@ -23,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -42,6 +49,12 @@ public class TransferLogServiceImpl extends ServiceImpl<TransferLogMapper, Trans
     private FilesService filesService;
     @Resource
     private FoldersService foldersService;
+    @Resource
+    private UsersService usersService;
+    @Resource
+    private StoragesService storagesService;
+    @Resource
+    private WebSocketService webSocketService;
 
     @Override
     public IPage<TransferLogPageResp.TransferRecord> getTransferLogs(IPage<TransferLogPageResp.TransferRecord> page, String status) {
@@ -116,9 +129,123 @@ public class TransferLogServiceImpl extends ServiceImpl<TransferLogMapper, Trans
         });
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void cancelUploadMission(Long logId) {
-        //TODO 链接 transfer websocket链 取消上传任务 减少用户额度
+        Long userId = UserContextHolder.getUserId();
+
+        // 1. 验证传输日志是否存在且属于当前用户
+        TransferLog transferLog = this.getOne(new QueryWrapper<TransferLog>()
+                .eq("id", logId)
+                .eq("user_id", userId)
+                .eq("transfer_type", TransferTypeEnum.UPLOAD)
+                .eq("log_status", TransferStatusEnum.PROCESSING)
+                .isNull("delete_time"));
+
+        if (transferLog == null) {
+            throw new LiteisleException("上传任务不存在或已完成，无法取消");
+        }
+
+        try {
+            // 2. 更新传输日志状态为取消
+            transferLog.setLogStatus(TransferStatusEnum.CANCELED);
+            transferLog.setErrorMessage("用户主动取消上传");
+            transferLog.setUpdateTime(new Date());
+            this.updateById(transferLog);
+
+            // 3. 处理关联的文件或文件夹
+            String fileName = "";
+            Long fileSize = 0L;
+
+            if (transferLog.getFileId() != null) {
+                // 处理单个文件
+                Files file = filesService.getById(transferLog.getFileId());
+                if (file != null) {
+                    fileName = file.getFileName();
+                    // 通过storageId获取文件大小
+                    if (file.getStorageId() != null) {
+                        Storages storage = storagesService.getById(file.getStorageId());
+                        if (storage != null) {
+                            fileSize = storage.getFileSize();
+                        }
+                    }
+
+                    // 物理删除文件记录（直接删除，不放入回收站）
+                    filesService.removeById(transferLog.getFileId());
+
+                    // 如果文件已经有storage_id，需要减少引用计数
+                    if (file.getStorageId() != null) {
+                        storagesService.update(new UpdateWrapper<Storages>()
+                                .eq("id", file.getStorageId())
+                                .setSql("reference_count = reference_count - 1"));
+                    }
+                }
+            } else if (transferLog.getFolderId() != null) {
+                // 处理文件夹
+                Folders folder = foldersService.getById(transferLog.getFolderId());
+                if (folder != null) {
+                    fileName = folder.getFolderName();
+
+                    // 获取文件夹下所有处理中的文件
+                    List<Files> folderFiles = filesService.list(new QueryWrapper<Files>()
+                            .eq("folder_id", transferLog.getFolderId())
+                            .eq("user_id", userId)
+                            .eq("file_status", FileStatusEnum.PROCESSING));
+
+                    // 计算总文件大小并物理删除文件
+                    if (!folderFiles.isEmpty()) {
+                        List<Long> fileIdsToDelete = new ArrayList<>();
+                        for (Files file : folderFiles) {
+                            fileIdsToDelete.add(file.getId());
+
+                            // 通过storageId获取文件大小
+                            if (file.getStorageId() != null) {
+                                Storages storage = storagesService.getById(file.getStorageId());
+                                if (storage != null && storage.getFileSize() != null) {
+                                    fileSize += storage.getFileSize();
+                                }
+
+                                // 如果文件已经有storage_id，需要减少引用计数
+                                storagesService.update(new UpdateWrapper<Storages>()
+                                        .eq("id", file.getStorageId())
+                                        .setSql("reference_count = reference_count - 1"));
+                            }
+                        }
+
+                        // 批量物理删除文件记录
+                        filesService.removeByIds(fileIdsToDelete);
+                    }
+
+                    // 物理删除文件夹
+                    foldersService.removeById(transferLog.getFolderId());
+                }
+            }
+
+            // 4. 恢复用户存储配额
+            if (fileSize > 0) {
+                usersService.update(new UpdateWrapper<Users>()
+                        .eq("id", userId)
+                        .setSql("storage_used = storage_used - " + fileSize));
+            }
+
+            // 5. 发送WebSocket通知
+            webSocketService.sendFileStatusUpdate(
+                    userId,
+                    transferLog.getFileId(),
+                    logId,
+                    null, // 文件已被物理删除，不需要状态
+                    TransferStatusEnum.CANCELED,
+                    fileName,
+                    "上传任务已被用户取消",
+                    0
+            );
+
+            log.info("用户 {} 成功取消上传任务，logId: {}, 恢复存储空间: {} bytes", userId, logId, fileSize);
+
+        } catch (Exception e) {
+            log.error("取消上传任务失败，logId: {}, userId: {}", logId, userId, e);
+            throw new LiteisleException("取消上传任务失败: " + e.getMessage());
+        }
     }
 
     private void dealOneLog(Long userId, Long logId, Boolean deleteFile) {

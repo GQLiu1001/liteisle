@@ -8,6 +8,7 @@ import com.liteisle.common.dto.response.TransferLogPageResp;
 import com.liteisle.common.dto.response.TransferSummaryResp;
 import com.liteisle.service.core.TransferLogService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
@@ -89,10 +90,13 @@ public class TransferController {
     /**
      * 取消上传任务
      */
-    @Operation(summary = "取消上传任务。", description = "取消上传任务")
+    @Operation(summary = "取消上传任务", 
+               description = "取消一个正在进行的上传任务。此操作会中断文件传输，并清理服务器上已接收的该文件的临时数据（恢复用户额度）。")
     @PostMapping("/upload/{log_id}/cancel")
-    public Result<Void> cancelUploadMission(@PathVariable("log_id") Long logId) {
+    public Result<String> cancelUploadMission(
+            @Parameter(description = "要取消的上传任务的传输日志ID") 
+            @PathVariable("log_id") Long logId) {
         transferLogService.cancelUploadMission(logId);
-        return Result.success();
+        return Result.success("上传任务已取消");
     }
 }
