@@ -118,7 +118,7 @@ public class TransferLogServiceImpl extends ServiceImpl<TransferLogMapper, Trans
 
     @Override
     public void cancelUploadMission(Long logId) {
-        //TODO 链接 transfer websocket链
+        //TODO 链接 transfer websocket链 取消上传任务 减少用户额度
     }
 
     private void dealOneLog(Long userId, Long logId, Boolean deleteFile) {

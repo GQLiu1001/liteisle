@@ -348,6 +348,8 @@ public class ItemViewServiceImpl implements ItemViewService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void copyItems(ItemsOperationReq req) {
+        //TODO 增加用户额度
+
         // 强制一次只复制一种类型，避免二义性
         if (!req.getFileIds().isEmpty() && !req.getFolderIds().isEmpty()) {
             throw new LiteisleException("不支持同时复制文件和文件夹，请分开操作");
