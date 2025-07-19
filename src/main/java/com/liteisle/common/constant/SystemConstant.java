@@ -23,4 +23,7 @@ public class SystemConstant {
     public static final String AVATAR_FILE_NAME = "avatar"; // 头像文件名可以保持不变
 
     public static final List<String> SUPPORTED_AVATAR_EXTENSIONS = List.of(".jpg", ".jpeg", ".png", ".gif");
+
+    public static final List<String> DEFAULT_SYSTEM_FOLDERS =
+            List.of("歌单", "书单", "上传", "分享");
 }

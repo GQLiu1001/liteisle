@@ -2,7 +2,6 @@ package com.liteisle.service.core.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.liteisle.common.constant.FolderConstant;
 import com.liteisle.common.domain.Folders;
 import com.liteisle.common.dto.request.FolderCreateReq;
 import com.liteisle.common.dto.response.*;
@@ -22,6 +21,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
+import static com.liteisle.common.constant.SystemConstant.DEFAULT_SYSTEM_FOLDERS;
+
 /**
  * @author 11965
  * @description 针对表【folders(用户逻辑文件夹结构表)】的数据库操作Service实现
@@ -39,7 +40,7 @@ public class FoldersServiceImpl extends ServiceImpl<FoldersMapper, Folders>
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void createUserDefaultFolder(Long userId) {
-        for (String folderName : FolderConstant.DEFAULT_SYSTEM_FOLDERS) {
+        for (String folderName : DEFAULT_SYSTEM_FOLDERS) {
             createSystemFolder(userId, folderName);
         }
     }
