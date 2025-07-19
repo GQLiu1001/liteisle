@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.liteisle.common.domain.Files;
 import com.liteisle.common.domain.Folders;
 import com.liteisle.common.domain.Storages;
+import com.liteisle.common.domain.Users;
 import com.liteisle.common.dto.request.ItemsDeleteReq;
 import com.liteisle.common.dto.request.ItemsOperationReq;
 import com.liteisle.common.dto.request.ItemsRenameReq;
@@ -16,6 +17,7 @@ import com.liteisle.common.exception.LiteisleException;
 import com.liteisle.service.core.FilesService;
 import com.liteisle.service.core.FoldersService;
 import com.liteisle.service.core.StoragesService;
+import com.liteisle.service.core.UsersService;
 import com.liteisle.service.view.ItemViewService;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;
@@ -42,6 +44,8 @@ public class ItemViewServiceImpl implements ItemViewService {
     private FoldersService foldersService;
     @Resource
     private StoragesService storagesService;
+    @Resource
+    private UsersService usersService;
 
 
     @Transactional(rollbackFor = Exception.class)
@@ -348,8 +352,6 @@ public class ItemViewServiceImpl implements ItemViewService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void copyItems(ItemsOperationReq req) {
-        //TODO 增加用户额度
-
         // 强制一次只复制一种类型，避免二义性
         if (!req.getFileIds().isEmpty() && !req.getFolderIds().isEmpty()) {
             throw new LiteisleException("不支持同时复制文件和文件夹，请分开操作");
@@ -409,7 +411,7 @@ public class ItemViewServiceImpl implements ItemViewService {
     }
 
     /**
-     * 优化：使用批量操作复制文件
+     * 优化：使用批量操作复制文件，并增加存储配额检查 (修正版)
      */
     private void copyFilesBatch(List<Long> fileIds, Long targetFolderId, Long userId) {
         // 1. 一次性查询所有原始文件
@@ -419,21 +421,61 @@ public class ItemViewServiceImpl implements ItemViewService {
 
         if (originalFiles.isEmpty()) return;
 
-        // 2. 在内存中准备好所有要插入的新文件对象
+        // --- 【第一步：前置检查】---
+
+        // 2. 计算需要增加的总文件大小
+        List<Long> storageIds = originalFiles.stream()
+                .map(Files::getStorageId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        long totalSizeToAdd = 0;
+        if (!storageIds.isEmpty()) {
+            List<Storages> storagesToCopy = storagesService.listByIds(storageIds);
+            Map<Long, Long> storageIdToSizeMap = storagesToCopy.stream()
+                    .collect(Collectors.toMap(Storages::getId, Storages::getFileSize));
+            totalSizeToAdd = originalFiles.stream()
+                    .mapToLong(file -> storageIdToSizeMap.getOrDefault(file.getStorageId(), 0L))
+                    .sum();
+        }
+
+        // 3. 检查用户配额是否充足
+        if (totalSizeToAdd > 0) {
+            // 只查询一次数据库获取User对象
+            Users user = usersService.getById(userId);
+            if (user == null) {
+                throw new LiteisleException("用户信息不存在");
+            }
+            // 假设字段名为 getStorageSize() 和 getStorageQuota()
+            if (user.getStorageUsed() + totalSizeToAdd > user.getStorageQuota()) {
+                throw new LiteisleException("存储空间不足，复制失败");
+            }
+        }
+
+        // --- 【第二步：执行写入】---
+        // 检查通过后，才开始真正地向数据库写入数据
+
+        // 4. 在内存中准备好所有要插入的新文件对象
         List<Files> newFilesToSave = originalFiles.stream().map(original -> {
             Files copy = new Files();
-            // 复制属性，但不复制主键和时间戳
             BeanUtils.copyProperties(original, copy, "id", "createTime", "updateTime");
             copy.setFolderId(targetFolderId);
-            // 你可能需要为复制的文件设置一个新的 sorted_order
             copy.setSortedOrder(new BigDecimal(System.currentTimeMillis()));
             return copy;
         }).collect(Collectors.toList());
 
-        // 3. 一次性批量保存所有新文件
+        // 5. 批量保存新文件记录
         filesService.saveBatch(newFilesToSave);
 
-        // 4. 批量更新引用计数
+        // 6. 更新用户的已用存储空间
+        if (totalSizeToAdd > 0) {
+            usersService.update(new UpdateWrapper<Users>()
+                    .eq("id", userId)
+                    .setSql("storage_size = storage_size + " + totalSizeToAdd));
+        }
+
+        // 7. 批量更新文件实体的引用计数
         Map<Long, Long> storageIdCountMap = originalFiles.stream()
                 .filter(f -> f.getStorageId() != null)
                 .collect(Collectors.groupingBy(Files::getStorageId, Collectors.counting()));
