@@ -81,7 +81,10 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
     @Override
     public String getDocumentViewUrl(Long fileId) {
         Long userId = UserContextHolder.getUserId();
-        Files file = this.getOne(new QueryWrapper<Files>().eq("id", fileId).eq("user_id", userId));
+        Files file = this.getOne(new LambdaQueryWrapper<Files>()
+                .eq(Files::getId, fileId)
+                .eq(Files::getUserId, userId)
+                .isNull(Files::getDeleteTime)); // 过滤已删除文件
         if (file == null) {
             throw new LiteisleException("文件不存在");
         }

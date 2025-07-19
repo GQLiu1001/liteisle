@@ -91,13 +91,13 @@ public class DownloadServiceImpl implements DownloadService {
     }
 
 
-    private TransferLog getTransferLog(Long fileId, Long userId, Storages optById) {
+    private TransferLog getTransferLog(Files file, Long userId, Storages optById) {
         TransferLog transferLog = new TransferLog();
         transferLog.setUserId(userId);
         transferLog.setTransferType(TransferTypeEnum.DOWNLOAD);
         transferLog.setLogStatus(TransferStatusEnum.PROCESSING);
-        transferLog.setFileId(fileId);
-        transferLog.setItemName(optById.getFileHash());
+        transferLog.setFileId(file.getId());
+        transferLog.setItemName(file.getFileName());
         transferLog.setItemSize(optById.getFileSize());
         transferLog.setClientIp(httpServletRequest.getRemoteAddr());
         transferLog.setCreateTime(new Date());
@@ -121,7 +121,7 @@ public class DownloadServiceImpl implements DownloadService {
         if (storage == null) {
             throw new LiteisleException("获取文件存储信息失败");
         }
-        TransferLog log = getTransferLog(file.getId(), userId, storage);
+        TransferLog log = getTransferLog(file, userId, storage);
         if (!transferLogService.save(log)) {
             throw new LiteisleException("创建下载日志失败");
         }

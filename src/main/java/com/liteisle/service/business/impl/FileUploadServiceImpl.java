@@ -210,7 +210,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             transferLog.setTransferType(TransferTypeEnum.UPLOAD);
             transferLog.setFileId(file2Save.getId());
             transferLog.setLogStatus(TransferStatusEnum.SUCCESS);
-            transferLog.setItemName(fileHash);
+            transferLog.setItemName(file.getOriginalFilename());
             transferLog.setItemSize(file.getSize());
             transferLog.setCreateTime(new Date());
             transferLog.setUpdateTime(new Date());
@@ -247,7 +247,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             transferLog.setTransferType(TransferTypeEnum.UPLOAD);
             transferLog.setFileId(file2Save.getId());
             transferLog.setLogStatus(TransferStatusEnum.SUCCESS);
-            transferLog.setItemName(fileHash);
+            transferLog.setItemName(file.getOriginalFilename());
             transferLog.setItemSize(file.getSize());
             transferLog.setCreateTime(new Date());
             transferLog.setUpdateTime(new Date());
@@ -300,7 +300,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         transferLog.setUserId(userId);
         transferLog.setTransferType(TransferTypeEnum.UPLOAD);
         transferLog.setFileId(file2Save.getId());
-        transferLog.setLogStatus(TransferStatusEnum.PROCESSING);
+        transferLog.setLogStatus(TransferStatusEnum.SUCCESS);
         transferLog.setItemName(file.getOriginalFilename());
         transferLog.setItemSize(file.getSize());
         transferLog.setCreateTime(new Date());
