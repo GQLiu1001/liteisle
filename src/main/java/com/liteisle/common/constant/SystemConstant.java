@@ -20,13 +20,6 @@ public class SystemConstant {
      */
     public static final String DATA_BUCKET_PREFIX = "data/";
 
-    /**
-     * 临时文件的存储路径前缀。
-     * 用于分块上传等临时场景，可以定期清理。
-     * 格式: temp/{yyyyMMdd}/{random_uuid}/
-     */
-    public static final String TEMP_FOLDER_PREFIX = "temp/";
-
     public static final String AVATAR_FILE_NAME = "avatar"; // 头像文件名可以保持不变
 
     public static final List<String> SUPPORTED_AVATAR_EXTENSIONS = List.of(".jpg", ".jpeg", ".png", ".gif");
