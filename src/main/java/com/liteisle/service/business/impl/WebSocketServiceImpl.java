@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.liteisle.common.constant.WebSocketMessageType.*;
+
 /**
  * WebSocket业务服务实现类
  */
@@ -33,7 +35,7 @@ public class WebSocketServiceImpl implements WebSocketService {
             FileStatusUpdateMessage message = new FileStatusUpdateMessage(
                     fileId, logId, fileStatus, transferStatus, fileName, errorMessage, progress
             );
-            String messageJson = WebSocketMessageUtil.createAndSerialize(WebSocketMessageType.FILE_STATUS_UPDATED, message);
+            String messageJson = WebSocketMessageUtil.createAndSerialize(FILE_STATUS_UPDATED, message);
             webSocketHandler.sendMessageToUser(userId, messageJson);
             
             log.debug("发送文件状态更新消息给用户 {}: 文件ID={}, 状态={}", userId, fileId, fileStatus);
@@ -45,7 +47,7 @@ public class WebSocketServiceImpl implements WebSocketService {
     @Override
     public void sendShareSaveCompleted(Long userId, ShareSaveCompletedMessage message) {
         try {
-            String messageJson = WebSocketMessageUtil.createAndSerialize(WebSocketMessageType.SHARE_SAVE_COMPLETED, message);
+            String messageJson = WebSocketMessageUtil.createAndSerialize(SHARE_SAVE_COMPLETED, message);
             webSocketHandler.sendMessageToUser(userId, messageJson);
             
             log.debug("发送分享转存完成消息给用户 {}: 成功={}, 失败={}", 
@@ -58,7 +60,7 @@ public class WebSocketServiceImpl implements WebSocketService {
     @Override
     public void sendShareSaveFailed(Long userId, ShareSaveCompletedMessage message) {
         try {
-            String messageJson = WebSocketMessageUtil.createAndSerialize(WebSocketMessageType.SHARE_SAVE_FAILED, message);
+            String messageJson = WebSocketMessageUtil.createAndSerialize(SHARE_SAVE_FAILED, message);
             webSocketHandler.sendMessageToUser(userId, messageJson);
             
             log.debug("发送分享转存失败消息给用户 {}: 失败文件数={}", userId, message.getFailedCount());

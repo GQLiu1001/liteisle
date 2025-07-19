@@ -15,6 +15,8 @@ import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import static com.liteisle.common.constant.SystemConstant.USER_DEFAULT_URL;
+
 @RestController
 @RequestMapping("/auth")
 @Tag(name = "用户认证接口")
@@ -100,7 +102,7 @@ public class AuthController {
     @PutMapping("/me/reset-picture")
     public Result<String> resetPicture() {
         usersService.resetPicture();
-        return Result.success(SystemConstant.USER_DEFAULT_URL);
+        return Result.success(USER_DEFAULT_URL);
     }
 
     /**

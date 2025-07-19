@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.liteisle.common.constant.WebSocketMessageType.HEARTBEAT_PING;
+import static com.liteisle.common.constant.WebSocketMessageType.HEARTBEAT_PONG;
+
 @Slf4j
 @Component // 关键点1：让 Spring 管理这个 Handler
 public class WebSocketHandler extends TextWebSocketHandler {
@@ -48,8 +51,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
         Long userId = (Long) session.getAttributes().get("userId");
         
         // 处理心跳包
-        if (WebSocketMessageType.HEARTBEAT_PING.equals(payload)) {
-            session.sendMessage(new TextMessage(WebSocketMessageType.HEARTBEAT_PONG));
+        if (HEARTBEAT_PING.equals(payload)) {
+            session.sendMessage(new TextMessage(HEARTBEAT_PONG));
             log.debug("收到来自 userId: {} 的心跳包，已回复pong", userId);
             return;
         }

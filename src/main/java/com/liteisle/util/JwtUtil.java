@@ -18,6 +18,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
+import static com.liteisle.common.constant.RedisConstant.BLACK_LIST_TOKEN;
+
 /**
  * JWT 工具类
  * 用于生成、验证和解析JWT令牌
@@ -81,7 +83,7 @@ public class JwtUtil {
     public boolean validateToken(String token) {
         try {
             verifier.verify(token);
-            return !stringRedisTemplate.hasKey(RedisConstant.BLACK_LIST_TOKEN + token);
+            return !stringRedisTemplate.hasKey(BLACK_LIST_TOKEN + token);
         } catch (JWTVerificationException e) {
             // 提升日志级别为 WARN
             log.warn("JWT令牌验证失败: {}", e.getMessage());

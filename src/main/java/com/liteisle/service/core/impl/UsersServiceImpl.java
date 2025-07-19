@@ -32,6 +32,8 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import static com.liteisle.common.constant.RedisConstant.BLACK_LIST_TOKEN;
+import static com.liteisle.common.constant.RedisConstant.USER_EMAIL;
 import static com.liteisle.common.constant.SystemConstant.*;
 
 /**
@@ -85,7 +87,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
             throw new LiteisleException("邮箱格式不正确");
         }
         // 2. 验证码校验
-        String redisVCode = stringRedisTemplate.opsForValue().get(RedisConstant.USER_EMAIL + req.getEmail());
+        String redisVCode = stringRedisTemplate.opsForValue().get(USER_EMAIL + req.getEmail());
         if (redisVCode == null) {
             throw new LiteisleException("验证码已过期，请重新获取");
         }
@@ -106,7 +108,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         // 5. 创建用户关联资源（如默认文件夹）
         foldersService.createUserDefaultFolder(user.getId());
         // 6. 所有事务性操作成功后，清理非事务性资源（如Redis验证码）
-        stringRedisTemplate.delete(RedisConstant.USER_EMAIL + req.getEmail());
+        stringRedisTemplate.delete(USER_EMAIL + req.getEmail());
         // 7. 生成Token并返回结果
         String token = jwtUtil.generateToken(user.getUsername(), user.getId());
         return new AuthInfoResp(user.getUsername(), user.getEmail(), user.getAvatar(), token);
@@ -114,7 +116,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
 
     @Override
     public void sendVcode(String email) {
-        if (stringRedisTemplate.opsForValue().get(RedisConstant.USER_EMAIL + email) != null) {
+        if (stringRedisTemplate.opsForValue().get(USER_EMAIL + email) != null) {
             throw new LiteisleException("请勿重复发送验证码");
         }
         if (isInvalidEmail(email)) {
@@ -122,7 +124,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         }
         String vCode = CaptchaUtil.generate6DigitCaptcha();
         emailCenter.sendEmail(email, "Liteisle 邮箱验证码", "您的验证码是：" + vCode);
-        stringRedisTemplate.opsForValue().set(RedisConstant.USER_EMAIL + email, vCode, 5, TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set(USER_EMAIL + email, vCode, 5, TimeUnit.MINUTES);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -134,7 +136,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         if (!Objects.equals(req.getConfirmPassword(), req.getNewPassword())){
             throw new LiteisleException("密码不一致");
         }
-        String redisVCode = stringRedisTemplate.opsForValue().get(RedisConstant.USER_EMAIL + req.getEmail());
+        String redisVCode = stringRedisTemplate.opsForValue().get(USER_EMAIL + req.getEmail());
         if (redisVCode == null || !redisVCode.equals(req.getVcode())) {
             throw new LiteisleException("验证码错误或已过期");
         }
@@ -147,7 +149,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         }
         user.setPassword(passwordEncoder.encode(req.getNewPassword()));
         usersMapper.updateById(user);
-        stringRedisTemplate.delete(RedisConstant.USER_EMAIL + req.getEmail());
+        stringRedisTemplate.delete(USER_EMAIL + req.getEmail());
     }
 
     @Override
@@ -269,7 +271,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         // 2. 再更新数据库中的记录为默认 URL
         Users userToUpdate = new Users();
         userToUpdate.setId(userId);
-        userToUpdate.setAvatar(SystemConstant.USER_DEFAULT_URL);
+        userToUpdate.setAvatar(USER_DEFAULT_URL);
         boolean updated = this.updateById(userToUpdate);
         if (!updated) {
             throw new LiteisleException("重置头像失败");
@@ -285,7 +287,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         }
 
         stringRedisTemplate.opsForValue()
-                .set(RedisConstant.BLACK_LIST_TOKEN + token, "invalid", 7, TimeUnit.DAYS);
+                .set(BLACK_LIST_TOKEN + token, "invalid", 7, TimeUnit.DAYS);
     }
 
     private boolean isInvalidEmail(String email) {
@@ -298,8 +300,8 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
         user.setUsername(req.getUsername());
         user.setEmail(req.getEmail());
         user.setPassword(passwordEncoder.encode(req.getPassword()));
-        user.setAvatar(SystemConstant.USER_DEFAULT_URL);
-        user.setStorageQuota(SystemConstant.USER_DEFAULT_STORAGE_QUOTA);
+        user.setAvatar(USER_DEFAULT_URL);
+        user.setStorageQuota(USER_DEFAULT_STORAGE_QUOTA);
         user.setStorageUsed(0L);
         Date now = new Date();
         user.setCreateTime(now);
