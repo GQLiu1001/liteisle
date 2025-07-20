@@ -241,7 +241,7 @@ public class ItemViewServiceImpl implements ItemViewService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void setItemOrder(Long itemId, SetOrderReq req, String itemType) {
-        //TODO redis简化 不能移动系统根目录文件夹 代码review
+
         Long userId = UserContextHolder.getUserId();
 
         if ("folder".equals(itemType)) {

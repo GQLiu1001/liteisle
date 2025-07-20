@@ -60,6 +60,7 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
 
     @Override
     public ShareCreateResp createShare(ShareCreateReq req) {
+        //TODO 加入布隆cache
         //一次只能分享单个文件或者单个文件夹
         checkOnlyOneTarget(req.getFileId(), req.getFolderId());
         Long userId = UserContextHolder.getUserId();
@@ -74,7 +75,7 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
             if (file == null || file.getFileStatus() != FileStatusEnum.AVAILABLE) {
                 throw new LiteisleException("文件不存在或不可用");
             }
-            return createShare(
+            return createShareLinkP(
                     req.getFileId(), null ,token, req.getIsEncrypted(), req.getExpiresInDays(),userId);
         }else {
             //分享的文件夹
@@ -85,12 +86,12 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
             if (folder == null) {
                 throw new LiteisleException("文件夹不存在");
             }
-            return  createShare(
+            return  createShareLinkP(
                    null, req.getFolderId(), token, req.getIsEncrypted(), req.getExpiresInDays(), userId);
         }
     }
 
-    private ShareCreateResp createShare(
+    private ShareCreateResp createShareLinkP(
             Long fileId,Long folderId, String token ,Boolean isEncrypted ,Integer expiresInDays ,Long userId) {
         //判断是否加密
         String password = null;
