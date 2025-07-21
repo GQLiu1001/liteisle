@@ -193,7 +193,7 @@ public class FoldersServiceImpl extends ServiceImpl<FoldersMapper, Folders>
         folder.setParentId(0L);
         folder.setFolderName(folderName);
         folder.setFolderType(FolderTypeEnum.SYSTEM);
-        folder.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()));
+        folder.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
         Date now = new Date();
         folder.setCreateTime(now);
         folder.setUpdateTime(now);
@@ -245,7 +245,7 @@ public class FoldersServiceImpl extends ServiceImpl<FoldersMapper, Folders>
         folder.setFolderType(req.getFolderType());
         folder.setCreateTime(new Date());
         folder.setUpdateTime(new Date());
-        folder.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()));
+        folder.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
         return folder;
     }
 }

@@ -232,7 +232,7 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
             newFolder.setParentId(targetFolderId);
             newFolder.setFolderName(originalFolder.getFolderName());
             newFolder.setFolderType(originalFolder.getFolderType());
-            newFolder.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()));
+            newFolder.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
             foldersService.save(newFolder);
             newParentFolderId = newFolder.getId(); // 更新父文件夹ID为新创建的文件夹
             originalFiles = filesService.list(new QueryWrapper<Files>()
@@ -266,7 +266,7 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
             newFile.setFileExtension(originalFile.getFileExtension());
             newFile.setFileType(originalFile.getFileType());
             newFile.setFileStatus(FileStatusEnum.PROCESSING); // 初始状态
-            newFile.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()));
+            newFile.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
             filesService.save(newFile);
             newFilesToSave.add(newFile);
 

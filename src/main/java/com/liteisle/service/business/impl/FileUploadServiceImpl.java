@@ -124,7 +124,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         fileRecord.setFileExtension(suffix);
         fileRecord.setFileType(fileType);
         fileRecord.setFileStatus(FileStatusEnum.PROCESSING);
-        fileRecord.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()));
+        fileRecord.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
         fileRecord.setCreateTime(new Date());
         fileRecord.setUpdateTime(new Date());
         boolean saveFile = filesService.save(fileRecord);
@@ -187,7 +187,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             file2Save.setFileExtension(suffix);
             file2Save.setStorageId(storagesId);
             file2Save.setFileName(file.getOriginalFilename());
-            file2Save.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()));
+            file2Save.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
             file2Save.setCreateTime(new Date());
             file2Save.setUpdateTime(new Date());
             boolean saveFile = filesService.save(file2Save);
@@ -234,7 +234,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             file2Save.setFileExtension(suffix);
             file2Save.setStorageId(storagesId);
             file2Save.setFileName(file.getOriginalFilename());
-            file2Save.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()));
+            file2Save.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
             file2Save.setCreateTime(new Date());
             file2Save.setUpdateTime(new Date());
             boolean saveFile = filesService.save(file2Save);
@@ -279,7 +279,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         file2Save.setFileStatus(FileStatusEnum.AVAILABLE);
         file2Save.setFileExtension(suffix);
         file2Save.setFileName(file.getOriginalFilename());
-        file2Save.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()));
+        file2Save.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
         file2Save.setCreateTime(new Date());
         file2Save.setUpdateTime(new Date());
         boolean save = filesService.save(file2Save);

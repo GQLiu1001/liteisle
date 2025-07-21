@@ -112,7 +112,7 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
         file.setFileExtension("md");
         file.setFileType(FileTypeEnum.DOCUMENT);
         file.setFileStatus(FileStatusEnum.AVAILABLE);
-        file.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()));
+        file.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
         file.setCreateTime(new Date());
         file.setUpdateTime(new Date());
         boolean saveFile = this.save(file);

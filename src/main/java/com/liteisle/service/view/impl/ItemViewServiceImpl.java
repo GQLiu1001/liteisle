@@ -342,7 +342,7 @@ public class ItemViewServiceImpl implements ItemViewService {
         } else {
             // 理论上不应该发生，因为列表至少有一个元素（被移动的那个）
             // 如果是创建新元素，可以给一个默认值
-            newOrder = BigDecimal.valueOf(System.currentTimeMillis());
+            newOrder = BigDecimal.valueOf(System.currentTimeMillis()*100000);
         }
 
         // 5. 更新目标项目的排序值
@@ -461,7 +461,7 @@ public class ItemViewServiceImpl implements ItemViewService {
             Files copy = new Files();
             BeanUtils.copyProperties(original, copy, "id", "createTime", "updateTime");
             copy.setFolderId(targetFolderId);
-            copy.setSortedOrder(new BigDecimal(System.currentTimeMillis()));
+            copy.setSortedOrder(new BigDecimal(System.currentTimeMillis()*100000));
             return copy;
         }).collect(Collectors.toList());
 
@@ -506,7 +506,7 @@ public class ItemViewServiceImpl implements ItemViewService {
         Folders newFolder = new Folders();
         BeanUtils.copyProperties(originalFolder, newFolder, "id", "createTime", "updateTime");
         newFolder.setParentId(parentFolderId);
-        newFolder.setSortedOrder(new BigDecimal(System.currentTimeMillis()));
+        newFolder.setSortedOrder(new BigDecimal(System.currentTimeMillis()*100000));
         foldersService.save(newFolder); // 保存新文件夹以获取ID
 
         // 3. 找出所有源文件ID
