@@ -46,6 +46,11 @@ public class BloomClientImpl implements BloomClient {
     }
 
     @Override
+    public boolean fastReqContains(String bloomKey, String value) {
+        return getOrInitFilter(bloomKey).contains(value);
+    }
+
+    @Override
     public boolean mightContain(String bloomKey, String value, Function<String, Boolean> verifyFunction) {
         return mightContainWithRetry(bloomKey, value, verifyFunction, 0);
     }

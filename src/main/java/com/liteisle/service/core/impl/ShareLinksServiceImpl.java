@@ -1,10 +1,12 @@
 package com.liteisle.service.core.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.liteisle.center.AsyncFileProcessingCenter;
+import com.liteisle.common.constant.RedisConstant;
 import com.liteisle.common.domain.*;
 import com.liteisle.common.dto.request.ShareCreateReq;
 import com.liteisle.common.dto.request.ShareSaveReq;
@@ -15,6 +17,7 @@ import com.liteisle.common.dto.response.ShareRecordPageResp;
 import com.liteisle.common.dto.response.ShareSaveAsyncResp;
 import com.liteisle.common.enums.*;
 import com.liteisle.common.exception.LiteisleException;
+import com.liteisle.module.cache.bloom.BloomClient;
 import com.liteisle.service.core.*;
 import com.liteisle.mapper.ShareLinksMapper;
 import com.liteisle.util.CaptchaUtil;
@@ -26,11 +29,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.liteisle.common.constant.RedisConstant.SHARE_TOKEN_BLACKLIST_BLOOM;
+import static com.liteisle.common.constant.RedisConstant.SHARE_TOKEN_BLOOM;
+import static com.liteisle.common.constant.SystemConstant.MAX_TOKEN_ATTEMPTS;
 
 /**
 * @author 11965
@@ -41,8 +49,6 @@ import java.util.stream.Collectors;
 public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLinks>
     implements ShareLinksService{
 
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
     @Resource
     private ShareLinksMapper shareLinksMapper;
     @Resource
@@ -57,14 +63,15 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
     private AsyncFileProcessingCenter asyncFileProcessingCenter;
     @Resource
     private TransferLogService transferLogService;
+    @Resource
+    private BloomClient bloomClient;
 
     @Override
     public ShareCreateResp createShare(ShareCreateReq req) {
-        //TODO 加入布隆cache
         //一次只能分享单个文件或者单个文件夹
         checkOnlyOneTarget(req.getFileId(), req.getFolderId());
         Long userId = UserContextHolder.getUserId();
-        String token = getShareToken();
+        String token = createShareToken();
         //如果分享的是文件
         if (req.getFileId() != null) {
             //获取并判断
@@ -91,6 +98,33 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
         }
     }
 
+    private void checkOnlyOneTarget(Long fileId, Long folderId) {
+        if (fileId != null && folderId != null) {
+            throw new LiteisleException("请选择要分享的文件或文件夹（只能选一个）");
+        }
+        if (fileId == null && folderId == null) {
+            throw new LiteisleException("必须选择一个分享对象");
+        }
+    }
+
+    private String createShareToken() {
+        for (int i = 0; i < MAX_TOKEN_ATTEMPTS; i++) {
+            String token = CaptchaUtil.generate24DigitCaptcha();
+            if (!tokenExists(token)) {
+                return token;
+            }
+        }
+        throw new LiteisleException("系统繁忙，生成分享链接失败，请稍后再试");
+    }
+
+    private boolean tokenExists(String token) {
+        return bloomClient.mightContain(SHARE_TOKEN_BLOOM, token,this::verifyTokenFromDb);
+    }
+
+    private boolean verifyTokenFromDb(String token) {
+        return shareLinksMapper.selectOne(new QueryWrapper<ShareLinks>().eq("share_token", token)) != null;
+    }
+
     private ShareCreateResp createShareLinkP(
             Long fileId,Long folderId, String token ,Boolean isEncrypted ,Integer expiresInDays ,Long userId) {
         //判断是否加密
@@ -111,47 +145,18 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
         if (insert <= 0){
             throw new LiteisleException("创建分享链接失败");
         }
+        boolean b = bloomClient.add2Bloom(SHARE_TOKEN_BLOOM, token);
+        if (!b){
+            throw new LiteisleException("创建分享链接失败");
+        }
         return new ShareCreateResp(token, password);
     }
 
-    private boolean tokenExists(String token) {
-        //TODO redis布隆
-        return shareLinksMapper
-                .selectOne(new QueryWrapper<ShareLinks>().eq("share_token", token)) != null;
-    }
-
-    private String getShareToken() {
-        String token = CaptchaUtil.generate24DigitCaptcha();
-        while (tokenExists(token)) {
-            token = CaptchaUtil.generate24DigitCaptcha();
-        }
-        return token;
-    }
-
-    private void checkOnlyOneTarget(Long fileId, Long folderId) {
-        if (fileId != null && folderId != null) {
-            throw new LiteisleException("请选择要分享的文件或文件夹（只能选一个）");
-        }
-        if (fileId == null && folderId == null) {
-            throw new LiteisleException("必须选择一个分享对象");
-        }
-    }
-
-
     @Override
     public ShareInfoResp verifyShare(ShareVerifyReq req) {
-        // 验证 token 和密码
-        boolean flag = validateGetShareRequest(req.getShareToken(), req.getSharePassword());
-        if (!flag){
-            throw new LiteisleException("验证失败");
-        }
-
-        // 获取分享信息
-        ShareLinks shareLink = this.getOne(new QueryWrapper<ShareLinks>()
-                .eq("share_token", req.getShareToken()));
-        if (shareLink == null) {
-            throw new LiteisleException("分享链接无效");
-        }
+        // 调用统一验证方法
+        ShareLinks shareLink =
+                validateAndGetShareLink(req.getShareToken(), req.getSharePassword());
 
         Long ownerUserId = shareLink.getOwnerId(); // 分享者用户ID
         ShareInfoResp shareInfoResp = new ShareInfoResp();
@@ -200,15 +205,10 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ShareSaveAsyncResp saveShare(ShareSaveReq req) {
-        // 1. 再次验证分享链接的有效性
-        boolean flag = validateGetShareRequest(req.getShareToken(), req.getSharePassword());
-        if (!flag) {
-            throw new LiteisleException("分享链接无效或密码错误");
-        }
+        // 调用统一验证方法
+        ShareLinks shareLink = validateAndGetShareLink(req.getShareToken(), req.getSharePassword());
 
         Long receiverId = UserContextHolder.getUserId();
-        ShareLinks shareLink = this.getOne(new QueryWrapper<ShareLinks>()
-                .eq("share_token", req.getShareToken()));
         Long sharerId = shareLink.getOwnerId();
 
         // 2. 解析接收者要保存到的目标文件夹
@@ -325,18 +325,53 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
         }
     }
 
-    private boolean validateGetShareRequest(String shareToken, String sharePassword) {
+    /**
+     * 统一验证分享链接并返回其实体。
+     * 整合了黑名单、白名单布隆过滤器和数据库查询。
+     *
+     * @param shareToken 分享token
+     * @param sharePassword 访问密码 (可以为null)
+     * @return 验证通过的 ShareLinks 实体
+     * @throws LiteisleException 如果验证失败
+     */
+    private ShareLinks validateAndGetShareLink(String shareToken, String sharePassword) {
+        // 1. 【黑名单检查】快速拒绝无效token
+        // 直接查布隆，不查DB。如果在黑名单里，说明一定无效。
+        if (bloomClient.fastReqContains(SHARE_TOKEN_BLACKLIST_BLOOM, shareToken)) {
+            throw new LiteisleException("分享链接不存在或已失效");
+        }
+
+        // 2. 【白名单检查】快速过滤绝大多数不存在的token
+        // 直接查布隆，不查DB。如果白名单里没有，说明一定不存在。
+        if (!bloomClient.fastReqContains(SHARE_TOKEN_BLOOM, shareToken)) {
+            throw new LiteisleException("分享链接不存在或已失效");
+        }
+
+        // 3. 【数据库最终校验】执行唯一的一次数据库查询
+        // 只有在两个布隆过滤器都无法100%确定时，才访问数据库
         ShareLinks shareLink = this.getOne(new QueryWrapper<ShareLinks>().eq("share_token", shareToken));
-        if (shareLink == null) return false;
+
+        // 4. 【综合验证】
+        // 数据库说没有，说明是布隆误判，直接拒绝
+        if (shareLink == null) {
+            throw new LiteisleException("分享链接不存在或已失效");
+        }
+
         // 检查有效期
         if (shareLink.getExpireTime() != null && new Date().after(shareLink.getExpireTime())) {
-            return false;
+            // 可选：如果过期了，可以将其加入黑名单，加速下次判断
+            bloomClient.add2Bloom(SHARE_TOKEN_BLACKLIST_BLOOM, shareToken);
+            throw new LiteisleException("分享链接已过期");
         }
-        // 如果设置了密码，需校验
-        return shareLink.getSharePassword() == null || shareLink.getSharePassword().equals(sharePassword);
+
+        // 检查密码
+        if (shareLink.getSharePassword() != null && !shareLink.getSharePassword().equals(sharePassword)) {
+            throw new LiteisleException("访问密码错误");
+        }
+
+        // 所有验证通过
+        return shareLink;
     }
-
-
 
     @Override
     public IPage<ShareRecordPageResp.ShareRecord> getShareRecords(IPage<ShareRecordPageResp.ShareRecord> page) {
@@ -346,15 +381,29 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
 
     @Override
     public void deleteShare(Long shareId) {
-        //用户取消分享
+
         Long ownerId = UserContextHolder.getUserId();
-        boolean remove = this.remove(new QueryWrapper<ShareLinks>()
-                .eq("id", shareId)
-                .eq("owner_id", ownerId));
-        if (!remove){
+
+        // 查询分享记录，校验是否存在
+        ShareLinks shareLinks = this.getOne(new LambdaQueryWrapper<ShareLinks>()
+                .eq(ShareLinks::getId, shareId)
+                .eq(ShareLinks::getOwnerId, ownerId));
+
+        if (shareLinks == null) {
+            throw new LiteisleException("分享不存在或无权限删除");
+        }
+
+        // 删除分享记录
+        boolean removed = this.removeById(shareId);
+        if (!removed) {
             throw new LiteisleException("删除分享失败");
         }
-        //TODO redis
+
+        boolean success = bloomClient
+                .add2Bloom(SHARE_TOKEN_BLACKLIST_BLOOM, shareLinks.getShareToken());
+        if (!success) {
+            throw new LiteisleException("添加分享黑名单失败");
+        }
     }
 }
 

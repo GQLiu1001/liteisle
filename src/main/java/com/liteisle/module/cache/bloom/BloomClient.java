@@ -26,4 +26,12 @@ public interface BloomClient {
      * @return 存在且通过校验返回true，否则false
      */
     boolean mightContain(String bloomKey, String value, Function<String, Boolean> verifyFunction);
+
+    /**
+     * 直接检查布隆过滤器中是否包含某个值，不访问数据库。
+     * @param bloomKey 布隆过滤器的 key
+     * @param value 要检查的值
+     * @return 如果布隆过滤器认为可能存在，则返回 true
+     */
+    boolean fastReqContains(String bloomKey, String value);
 }

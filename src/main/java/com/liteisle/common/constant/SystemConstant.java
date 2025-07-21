@@ -27,4 +27,6 @@ public class SystemConstant {
 
     public static final List<String> DEFAULT_SYSTEM_FOLDERS =
             List.of("歌单", "书单", "上传", "分享");
+
+    public static final int MAX_TOKEN_ATTEMPTS = 10;
 }
