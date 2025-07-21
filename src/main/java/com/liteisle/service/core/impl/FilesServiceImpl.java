@@ -142,14 +142,15 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void updateMarkdown(Long fileId, MarkdownUpdateReq req) {
-        //TODO REDIS 缓存
+
         Long userId = UserContextHolder.getUserId();
         // 检查文件是否该用户名下存在
         Files one = this.getOne(new QueryWrapper<Files>().eq("id", fileId).eq("user_id", userId));
         if (one == null) {
             throw new LiteisleException("文件不存在");
         }
-        DocumentMetadata documentMetadata = documentMetadataService.getOne(new QueryWrapper<DocumentMetadata>().eq("file_id", fileId));
+        DocumentMetadata documentMetadata = documentMetadataService
+                .getOne(new QueryWrapper<DocumentMetadata>().eq("file_id", fileId));
         if (documentMetadata == null) {
             throw new LiteisleException("文件元数据不存在");
         }

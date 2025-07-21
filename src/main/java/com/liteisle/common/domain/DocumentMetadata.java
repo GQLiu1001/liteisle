@@ -2,6 +2,7 @@ package com.liteisle.common.domain;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.Version;
 import lombok.Data;
 
 /**
@@ -25,6 +26,7 @@ public class DocumentMetadata {
     /**
      * 用于Markdown文件的乐观锁版本号
      */
+    @Version
     private Long version;
 
     @Override
