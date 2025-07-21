@@ -118,11 +118,9 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
     }
 
     private boolean tokenExists(String token) {
-        return bloomClient.mightContain(SHARE_TOKEN_BLOOM, token,this::verifyTokenFromDb);
-    }
-
-    private boolean verifyTokenFromDb(String token) {
-        return shareLinksMapper.selectOne(new QueryWrapper<ShareLinks>().eq("share_token", token)) != null;
+        return bloomClient.mightContain(SHARE_TOKEN_BLOOM, token,
+                t -> shareLinksMapper
+                        .selectOne(new QueryWrapper<ShareLinks>().eq("share_token", token)) != null);
     }
 
     private ShareCreateResp createShareLinkP(
