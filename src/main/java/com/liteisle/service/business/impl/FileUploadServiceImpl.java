@@ -270,7 +270,10 @@ public class FileUploadServiceImpl implements FileUploadService {
             //storages 引用加一
             boolean update = storagesService.update(new UpdateWrapper<Storages>()
                     .eq("id", storagesId)
-                    .set("reference_count", "reference_count + 1"));
+                    .setSql("reference_count = reference_count + 1"));
+            if (!update){
+                throw new LiteisleException("更新文件引用计数失败");
+            }
             return creatUploadResponse(file2Save, transferLog);
         }
     }
