@@ -35,7 +35,7 @@
         <asp>1.9.24</asp>
         <springai-alibaba>1.0.0.2</springai-alibaba>
         <mybatis-plus-spring-boot3-starter>3.5.12</mybatis-plus-spring-boot3-starter>
-        <springdoc-openapi-starter-webmvc-ui>2.8.9</springdoc-openapi-starter-webmvc-ui>
+        <springdoc-openapi-starter-webmvc-ui>2.7.0</springdoc-openapi-starter-webmvc-ui>
     </properties>
     <dependencies>
         <dependency>
