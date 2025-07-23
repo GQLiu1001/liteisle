@@ -3,6 +3,7 @@ package com.liteisle.service.view.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.liteisle.center.ReindexCenter;
 import com.liteisle.common.domain.Files;
 import com.liteisle.common.domain.Folders;
 import com.liteisle.common.domain.Storages;
@@ -21,13 +22,13 @@ import com.liteisle.service.core.UsersService;
 import com.liteisle.service.view.ItemViewService;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,7 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
+@Slf4j
 @Service
 public class ItemViewServiceImpl implements ItemViewService {
     @Resource
@@ -46,7 +47,8 @@ public class ItemViewServiceImpl implements ItemViewService {
     private StoragesService storagesService;
     @Resource
     private UsersService usersService;
-
+    @Resource
+    private ReindexCenter reindexCenter;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -254,6 +256,7 @@ public class ItemViewServiceImpl implements ItemViewService {
                 throw new LiteisleException("要排序的文件夹不存在");
             }
             if (folderToSort.getParentId() == 0) {
+                // 通常系统一级文件夹是不允许用户移动排序的
                 throw new LiteisleException("不能对系统一级文件夹进行排序");
             }
         }
@@ -317,36 +320,78 @@ public class ItemViewServiceImpl implements ItemViewService {
 
         // 3. 计算新的排序值
         BigDecimal newOrder;
-        int scale = 10; // 数据库小数位数
-        BigDecimal half = new BigDecimal("0.5");
+        // 最小允许的排序间隔，对应于DECIMAL(30,10)的最小正数0.0000000001
+        BigDecimal MIN_SORT_GAP = new BigDecimal("0.0000000001");
 
+
+        // 情况一：在两个现有项之间插入
         if (beforeOrder != null && afterOrder != null) {
-            // 移动到中间
-            BigDecimal mid = beforeOrder.add(afterOrder).multiply(half);
-            newOrder = mid.setScale(scale, RoundingMode.HALF_UP);
+            BigDecimal actualGap = afterOrder.subtract(beforeOrder);
 
-            // 4. 核心：检查精度是否耗尽
-            if (newOrder.compareTo(beforeOrder) == 0 || newOrder.compareTo(afterOrder) == 0) {
-                // 精度耗尽，需要重新分配排序值（Re-indexing）
-                // 此处简化处理，抛出异常提示前端重试或提示系统繁忙。
-                // 生产环境应触发一个 re-indexing 逻辑。
-                //TODO reindex操作
-                throw new LiteisleException("排序空间不足，请稍后重试");
+            // 核心：如果间隔不足，触发重排
+            if (actualGap.compareTo(MIN_SORT_GAP) <= 0) {
+                // 获取父文件夹ID以进行重排
+                Long parentFolderId = getParentFolderId(itemId, itemType, userId);
+
+                log.warn("排序精度耗尽或间隔过小 ({} <= {}), 对文件夹ID: {} 进行重新索引",
+                        actualGap, MIN_SORT_GAP, parentFolderId);
+                reindexCenter.reindexItemsInFolder(parentFolderId, userId);
+
+                // 重排后，重新获取最新的排序值
+                beforeOrder = orderFetcher.apply(req.getBeforeId());
+                afterOrder = orderFetcher.apply(req.getAfterId());
             }
+
+            // 无论是正常情况还是重排后，都使用微增法
+            newOrder = beforeOrder.add(MIN_SORT_GAP);
+
+            // 最终的健壮性检查，确保计算结果在区间内。
+            if (newOrder.compareTo(afterOrder) >= 0) {
+                log.error("即使在重排后，微增法计算的newOrder({})也超出了afterOrder({})的范围。" +
+                        "系统可能存在严重的数据排序问题。", newOrder, afterOrder);
+                throw new LiteisleException("排序计算失败，请联系管理员或重试。");
+            }
+
+            // 情况二：移动到列表最前面
         } else if (afterOrder != null) {
-            // 移动到最前
-            newOrder = afterOrder.subtract(BigDecimal.valueOf(1000)); // 减去一个较大的固定值，而不是1，以留出更多空间
+            newOrder = afterOrder.subtract(MIN_SORT_GAP);
+
+            // 情况三：移动到列表最后面
         } else if (beforeOrder != null) {
-            // 移动到最后
-            newOrder = beforeOrder.add(BigDecimal.valueOf(1000)); // 加上一个较大的固定值
+            newOrder = beforeOrder.add(MIN_SORT_GAP);
+
+            // 情况四：列表为空，插入第一个元素 (或创建新项)
         } else {
-            // 理论上不应该发生，因为列表至少有一个元素（被移动的那个）
-            // 如果是创建新元素，可以给一个默认值
-            newOrder = BigDecimal.valueOf(System.currentTimeMillis()*100000);
+            newOrder = BigDecimal.valueOf(System.currentTimeMillis() * 100000L);
         }
 
-        // 5. 更新目标项目的排序值
+        // 4. 更新目标项目的排序值
         orderUpdater.accept(itemId, newOrder);
+    }
+
+    /**
+     * 辅助方法：获取给定项的父文件夹ID
+     */
+    private Long getParentFolderId(Long itemId, String itemType, Long userId) {
+        if ("file".equals(itemType)) {
+            Files file = filesService.getOne(new LambdaQueryWrapper<Files>()
+                    .select(Files::getFolderId)
+                    .eq(Files::getId, itemId)
+                    .eq(Files::getUserId, userId));
+            if (file == null) {
+                throw new LiteisleException("文件不存在或无权限：" + itemId);
+            }
+            return file.getFolderId();
+        } else { // itemType == "folder"
+            Folders folder = foldersService.getOne(new LambdaQueryWrapper<Folders>()
+                    .select(Folders::getParentId)
+                    .eq(Folders::getId, itemId)
+                    .eq(Folders::getUserId, userId));
+            if (folder == null) {
+                throw new LiteisleException("文件夹不存在或无权限：" + itemId);
+            }
+            return folder.getParentId();
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -402,7 +447,9 @@ public class ItemViewServiceImpl implements ItemViewService {
         // 循环向上查找，直到 parent_id == 0
         Long currentParentId = folder.getParentId();
         while (currentParentId != null && currentParentId != 0) {
-            Folders parent = foldersService.getById(currentParentId);
+            Folders parent = foldersService.getOne(new LambdaQueryWrapper<Folders>()
+                    .eq(Folders::getId, currentParentId)
+                    .eq(Folders::getUserId, userId));
             if (parent == null) return null;
             if (parent.getParentId() == 0) return parent;
             currentParentId = parent.getParentId();
@@ -480,11 +527,9 @@ public class ItemViewServiceImpl implements ItemViewService {
                 .filter(f -> f.getStorageId() != null)
                 .collect(Collectors.groupingBy(Files::getStorageId, Collectors.counting()));
 
-        storageIdCountMap.forEach((storageId, count) -> {
-            storagesService.update(new UpdateWrapper<Storages>()
-                    .eq("id", storageId)
-                    .setSql("reference_count = reference_count + " + count));
-        });
+        storageIdCountMap.forEach((storageId, count) -> storagesService.update(new UpdateWrapper<Storages>()
+                .eq("id", storageId)
+                .setSql("reference_count = reference_count + " + count)));
     }
 
     /**
