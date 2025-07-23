@@ -9,10 +9,9 @@
             <result property="artist" column="artist" />
             <result property="album" column="album" />
             <result property="duration" column="duration" />
-            <result property="coverArtUrl" column="cover_art_url" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        file_id,artist,album,duration,cover_art_url
+        file_id,artist,album,duration
     </sql>
 </mapper>

@@ -115,7 +115,7 @@ public class FolderViewServiceImpl implements FolderViewService {
 
     private List<FolderContentResp.BreadcrumbItem> getBreadcrumbSync(Long folderId, Long userId) {
         List<FolderContentResp.BreadcrumbItem> breadcrumb = new ArrayList<>();
-        breadcrumb.add(new FolderContentResp.BreadcrumbItem(0L, "云盘"));
+//        breadcrumb.add(new FolderContentResp.BreadcrumbItem(0L, "云盘"));
         if (folderId == 0) {
             //根目录 不显示其他
             return breadcrumb;

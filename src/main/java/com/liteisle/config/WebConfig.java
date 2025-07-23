@@ -23,7 +23,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/auth/login",
                         "/auth/register",
                         "/auth/reset",
-                        "/auth/send-vcode",
+                        "/auth/send-vcode/**",
                         "/auth/forgot-password",
                         "/swagger-ui/**",
                         "/swagger-ui.html",
