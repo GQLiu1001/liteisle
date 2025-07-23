@@ -72,15 +72,24 @@ public class FileUploadServiceImpl implements FileUploadService {
         }
 
         //新增：减少用户存储额度 storage_used 注意先检查 storage_quota
-        Long storage = usersService.getById(userId).getStorageUsed();
-        if (storage + file.getSize() > usersService.getById(userId).getStorageQuota()) {
-            throw new LiteisleException("存储空间不足");
-        }
-        boolean updateStorage = usersService.update(new UpdateWrapper<Users>()
+//        Long storage = usersService.getById(userId).getStorageUsed();
+//        if (storage + file.getSize() > usersService.getById(userId).getStorageQuota()) {
+//            throw new LiteisleException("存储空间不足");
+//        }
+//        boolean updateStorage = usersService.update(new UpdateWrapper<Users>()
+//                .setSql("storage_used = storage_used + " + file.getSize())
+//                .eq("id", userId));
+        //优化 防止读取-修改-写入
+        // 将检查和更新合并到一个SQL语句中
+        boolean updateSuccess = usersService.update(new UpdateWrapper<Users>()
                 .setSql("storage_used = storage_used + " + file.getSize())
-                .eq("id", userId));
-        if (!updateStorage) {
-            throw new LiteisleException("更新用户存储空间失败");
+                .eq("id", userId)
+                // 关键：在WHERE子句中直接检查空间是否足够
+                .le("storage_used + " + file.getSize(), usersService.getById(userId).getStorageQuota())
+        );
+
+        if (!updateSuccess) {
+            throw new LiteisleException("存储空间不足或更新失败");
         }
 
         // 步骤 3: 处理 Markdown 文件 (特殊路径)
@@ -221,7 +230,10 @@ public class FileUploadServiceImpl implements FileUploadService {
             //storages 引用加一
             boolean update = storagesService.update(new UpdateWrapper<Storages>()
                     .eq("id", storagesId)
-                    .set("reference_count", "reference_count + 1"));
+                    .setSql("reference_count = reference_count + 1"));
+            if (!update){
+                throw new LiteisleException("更新文件引用计数失败");
+            }
             return creatUploadResponse(file2Save, transferLog);
         } else {
             //不是music
