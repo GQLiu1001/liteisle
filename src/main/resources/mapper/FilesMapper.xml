@@ -34,8 +34,7 @@
         f.sorted_order,
         m.artist,
         m.album,
-        m.duration,
-        m.cover_art_url
+        m.duration
         from
         files f
         left join music_metadata m on f.id = m.file_id
