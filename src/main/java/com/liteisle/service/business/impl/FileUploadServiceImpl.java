@@ -280,7 +280,7 @@ public class FileUploadServiceImpl implements FileUploadService {
 
     private FileUploadAsyncResp handleMarkdownUpload(
             MultipartFile file, Long targetFolderId, Long userId, String suffix) {
-        String content = "";
+        String content;
         try {
             content = extractTextContent(file);
         } catch (IOException e) {
