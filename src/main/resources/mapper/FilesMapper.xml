@@ -48,6 +48,8 @@
             f.file_name like concat('%', #{content}, '%')
             )
         </if>
+        order by
+             f.sorted_order DESC
     </select>
     <select id="getRecycleBinViewWithContent"
             resultType="com.liteisle.common.dto.response.RecycleBinContentResp$FileItem">

@@ -35,7 +35,7 @@
             f.user_id = #{userId}
           AND f.folder_type = #{type}
           AND f.delete_time IS NULL
-        ORDER BY f.sorted_order ASC
+        ORDER BY f.sorted_order DESC
     </select>
     <select id="selectFolders" resultType="com.liteisle.common.domain.Folders">
         SELECT
@@ -51,7 +51,7 @@
           AND f.folder_type = #{type}
           AND f.delete_time IS NULL
         GROUP BY f.id
-        ORDER BY f.sorted_order ASC
+        ORDER BY f.sorted_order DESC
     </select>
     <select id="getRecycleBinViewWithContent" resultType="com.liteisle.common.dto.response.RecycleBinContentResp$FolderItem">
         select
