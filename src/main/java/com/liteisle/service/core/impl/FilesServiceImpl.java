@@ -63,6 +63,7 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
             if (content == null) {
                 list = this.list(new LambdaQueryWrapper<Files>()
                         .eq(Files::getUserId, userId)
+                        .eq(Files::getFileType, FileTypeEnum.DOCUMENT)
                         .isNull(Files::getDeleteTime) // 过滤已删除文件
                 );
             } else {

@@ -41,6 +41,7 @@
         where
         f.delete_time is null
         and f.user_id = #{userId}
+          and f.file_type = 'music'
         <if test="content != null">
             and (
             f.file_name like concat('%', #{content}, '%')
