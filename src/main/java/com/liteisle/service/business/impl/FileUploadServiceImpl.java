@@ -71,14 +71,6 @@ public class FileUploadServiceImpl implements FileUploadService {
             throw new LiteisleException("不支持的文件类型");
         }
 
-        //新增：减少用户存储额度 storage_used 注意先检查 storage_quota
-//        Long storage = usersService.getById(userId).getStorageUsed();
-//        if (storage + file.getSize() > usersService.getById(userId).getStorageQuota()) {
-//            throw new LiteisleException("存储空间不足");
-//        }
-//        boolean updateStorage = usersService.update(new UpdateWrapper<Users>()
-//                .setSql("storage_used = storage_used + " + file.getSize())
-//                .eq("id", userId));
         //优化 防止读取-修改-写入
         // 将检查和更新合并到一个SQL语句中
         boolean updateSuccess = usersService.update(new UpdateWrapper<Users>()

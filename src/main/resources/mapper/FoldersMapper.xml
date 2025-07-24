@@ -109,6 +109,7 @@
         select folder_id, count(*) as count
         from files
         where delete_time is null
+        and file_status = 'available'
         <if test="content != null and content != ''"> -- 使用 and content != '' 更严谨
             and file_name like concat('%', #{content}, '%')
         </if>
