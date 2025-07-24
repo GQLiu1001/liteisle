@@ -55,7 +55,7 @@ public class ItemController {
      */
     @Operation(summary = "获取项目详情 (文件/文件夹)", description = "获取项目详情 (文件/文件夹)")
     @GetMapping("/{item_id}/detail")
-    public Result<ItemDetailResp> getItemDetail(@PathVariable("item_id") Long itemId, @RequestParam String itemType) {
+    public Result<ItemDetailResp> getItemDetail(@PathVariable("item_id") Long itemId, @RequestParam("item_type") String itemType) {
         ItemDetailResp resp = itemViewService.getItemDetail(itemId, itemType);
         return Result.success(resp);
     }
@@ -79,7 +79,7 @@ public class ItemController {
     public Result<Void> setItemOrder(
             @PathVariable("item_id") Long itemId,
             @RequestBody SetOrderReq req,
-            @RequestParam String itemType) {
+            @RequestParam("item_type") String itemType) {
         itemViewService.setItemOrder(itemId, req, itemType);
         return Result.success();
     }

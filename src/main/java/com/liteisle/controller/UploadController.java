@@ -23,7 +23,7 @@ public class UploadController {
     @PostMapping("/upload")
     public Result<FileUploadAsyncResp> uploadFile(
             @RequestParam("file") MultipartFile file,
-            @RequestParam Long folderId) {
+            @RequestParam("folder_id") Long folderId) {
         FileUploadAsyncResp resp = fileUploadService.uploadFile(file, folderId);
         return Result.success(resp);
     }
