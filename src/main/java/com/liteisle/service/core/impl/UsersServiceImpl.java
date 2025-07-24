@@ -207,13 +207,15 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
             removeOldAvatars(userId);
 
             // 4. 构建新的、唯一的 MinIO 对象名
-            String objectName = String.format(USER_AVATAR_FOLDER_PREFIX, userId) + "/" + AVATAR_FILE_NAME + newExtension;
+//            String objectName = String.format(USER_AVATAR_FOLDER_PREFIX, userId) + "/" + AVATAR_FILE_NAME + newExtension;
+            String objectName = String.format(USER_AVATAR_FOLDER_PREFIX, userId)  + AVATAR_FILE_NAME + newExtension;
 
             // 5. 上传新文件到 MinIO
             minioUtil.uploadFile(file, objectName);
 
             // 6. 构建新头像的永久访问 URL
             String newAvatarUrl = minioConfig.getEndpoint() + "/" + minioConfig.getBucket() + "/" + objectName;
+//            String newAvatarUrl = minioConfig.getEndpoint()  + minioConfig.getBucket() + "/" + objectName;
 
             // 7. 将新 URL 更新到数据库
             Users userToUpdate = new Users();
@@ -242,7 +244,8 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users>
     private void removeOldAvatars(Long userId) {
         String avatarFolderPath = String.format(USER_AVATAR_FOLDER_PREFIX, userId);
         for (String ext : SUPPORTED_AVATAR_EXTENSIONS) {
-            String oldObjectName = avatarFolderPath + "/" + AVATAR_FILE_NAME + ext;
+//            String oldObjectName = avatarFolderPath + "/" + AVATAR_FILE_NAME + ext;
+            String oldObjectName = avatarFolderPath  + AVATAR_FILE_NAME + ext;
             try {
                 minioUtil.removeFile(oldObjectName);
                 log.info("成功删除旧头像: {}", oldObjectName);
