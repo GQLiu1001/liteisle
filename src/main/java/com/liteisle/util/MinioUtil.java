@@ -67,6 +67,30 @@ public class MinioUtil {
     }
 
     /**
+     * 【新增方法】上传文件流到 MinIO。
+     * 这是为异步处理设计的重载版本，接收内存中的字节流，解决了临时文件被删除的问题。
+     *
+     * @param inputStream    文件内容的输入流
+     * @param objectSize     文件大小
+     * @param fullObjectName 在 MinIO 中的完整对象名称
+     * @param contentType    文件的 MIME 类型
+     * @return 存储在 MinIO 中的完整对象名
+     * @throws Exception 上传过程中发生的任何错误
+     */
+    public String uploadFile(InputStream inputStream, long objectSize, String fullObjectName, String contentType) throws Exception {
+        minioClient.putObject(
+                PutObjectArgs.builder()
+                        .bucket(this.defaultBucketName)
+                        .object(fullObjectName)
+                        .stream(inputStream, objectSize, -1) // 使用传入的参数
+                        .contentType(contentType)           // 使用传入的参数
+                        .build()
+        );
+        log.info("文件流上传成功！存储桶: {}, 对象名: {}", this.defaultBucketName, fullObjectName);
+        return fullObjectName;
+    }
+
+    /**
      * 获取一个临时的、带签名授权的 URL，用于客户端下载或预览（播放）。
      * 这是访问私有文件的标准、安全方式。
      *

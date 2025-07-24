@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -146,54 +147,58 @@ public class AsyncFileProcessingCenter {
         }
     }
 
+    /**
+     * 【修正版】处理新上传文件的异步任务
+     */
     @Async("virtualThreadPool") // 使用你的虚拟线程池执行异步任务
     @Transactional(rollbackFor = Exception.class)
-    public void processNewFile(MultipartFile multipartFile, String fileHash, Long fileId, Long logId) {
+    // 【关键修改】更新方法签名，接收字节数组和元数据
+    public void processNewFile(byte[] fileBytes, String originalFilename, long fileSize,
+                               String mimeType, String fileHash, Long fileId, Long logId) {
         File tempFile = null;
         try {
-            // 1. 将 MultipartFile 转为临时 File，以便 FFmpeg 处理
-            tempFile = File.createTempFile("upload-", "-" + multipartFile.getOriginalFilename());
+            // 1. 【修改】将传入的 byte[] 转为临时 File，以便 FFmpeg 等工具处理
+            tempFile = File.createTempFile("upload-", "-" + originalFilename);
             try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-                fos.write(multipartFile.getBytes());
+                fos.write(fileBytes);
             }
 
             // 2. 上传文件到 MinIO
-            // 使用哈希值构造存储路径，实现去重 e.g., data/e3/b0/e3b0c44298fc1c14...
-            String storagePath =
-                    DATA_BUCKET_PREFIX + fileHash.substring(0, 2) + "/" + fileHash.substring(2, 4) + "/" + fileHash;
-            minioUtil.uploadFile(multipartFile, storagePath);
+            String storagePath = DATA_BUCKET_PREFIX + fileHash.substring(0, 2) + "/" + fileHash.substring(2, 4) + "/" + fileHash;
+            // 【修改】调用 MinioUtil 的重载方法，传入字节流和元数据
+            minioUtil.uploadFile(new ByteArrayInputStream(fileBytes), fileSize, storagePath, mimeType);
 
             // 3. 创建并保存 Storages 记录
             Storages newStorage = new Storages();
             newStorage.setFileHash(fileHash);
-            newStorage.setFileSize(multipartFile.getSize());
-            newStorage.setMimeType(MimeTypeUtil.getMimeType(multipartFile.getOriginalFilename()));
+            newStorage.setFileSize(fileSize); // 使用传入的 fileSize
+            newStorage.setMimeType(mimeType); // 使用传入的 mimeType
             newStorage.setStoragePath(storagePath);
             newStorage.setReferenceCount(1);
             storagesService.save(newStorage);
 
-            // 4. 更新 Files 记录，关联 storage_id
+            // 4. 更新 Files 记录，关联 storage_id (逻辑不变)
             Files fileRecord = filesService.getById(fileId);
             if (fileRecord == null) {
                 throw new IllegalStateException("文件记录丢失: " + fileId);
             }
             fileRecord.setStorageId(newStorage.getId());
 
-            // 5. 如果是音乐文件，提取元数据
+            // 5. 如果是音乐文件，提取元数据 (逻辑不变, 使用 tempFile)
             if (Objects.equals(fileRecord.getFileType(), FileTypeEnum.MUSIC)) {
                 handleMusicMetadata(tempFile.getAbsolutePath(), fileId);
             }
 
-            // 6. 更新文件状态为可用
+            // 6. 更新文件状态为可用 (逻辑不变)
             fileRecord.setFileStatus(FileStatusEnum.AVAILABLE);
             filesService.updateById(fileRecord);
 
-            // 7. 更新传输日志为成功
+            // 7. 更新传输日志为成功 (逻辑不变)
             updateTransferLog(logId, TransferStatusEnum.SUCCESS, null);
 
             log.info("文件处理成功. FileId: {}, LogId: {}", fileId, logId);
-            
-            // 8. WebSocket 通知前端文件处理完成
+
+            // 8. WebSocket 通知 (逻辑不变)
             webSocketService.sendFileStatusUpdate(
                     fileRecord.getUserId(), fileId, logId, FileStatusEnum.AVAILABLE, TransferStatusEnum.SUCCESS, fileRecord.getFileName(), null, 100
             );

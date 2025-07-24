@@ -151,8 +151,25 @@ public class FileUploadServiceImpl implements FileUploadService {
             throw new LiteisleException("创建初始传输日志失败");
         }
 
-        // **3. 触发异步任务，把所有繁重的工作交给它**
-        asyncFileProcessingCenter.processNewFile(file, fileHash, fileRecord.getId(), logRecord.getId());
+        // 【关键修改】在调用异步任务前，将文件内容读入内存
+        byte[] fileBytes;
+        try {
+            fileBytes = file.getBytes();
+        } catch (IOException e) {
+            log.error("读取上传文件内容失败", e);
+            throw new LiteisleException("无法读取上传文件内容");
+        }
+
+        // 【关键修改】调用新的异步方法签名，传递字节数组和元数据，而不是MultipartFile
+        asyncFileProcessingCenter.processNewFile(
+                fileBytes,
+                file.getOriginalFilename(),
+                file.getSize(),
+                file.getContentType(), // 直接获取MIME类型
+                fileHash,
+                fileRecord.getId(),
+                logRecord.getId()
+        );
 
         log.info("新文件上传任务已启动, fileId: {}, logId: {}. 立即返回响应。", fileRecord.getId(), logRecord.getId());
 
