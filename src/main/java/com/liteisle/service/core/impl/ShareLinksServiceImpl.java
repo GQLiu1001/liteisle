@@ -164,7 +164,7 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
             Files file = filesService.getOne(new QueryWrapper<Files>()
                     .eq("id", shareLink.getFileId())
                     .eq("user_id", ownerUserId)
-                    .eq("delete_time", null));
+                    .isNull("delete_time"));
             if (file == null) {
                 throw new LiteisleException("分享文件不存在或已删除");
             }
