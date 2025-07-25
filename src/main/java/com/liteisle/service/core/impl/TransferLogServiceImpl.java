@@ -122,6 +122,7 @@ public class TransferLogServiceImpl extends ServiceImpl<TransferLogMapper, Trans
         Long userId = UserContextHolder.getUserId();
         List<TransferLog> list = this.list(new QueryWrapper<TransferLog>()
                 .eq("user_id", userId)
+                .eq("log_status", "success")
                 .select("id")
                 .isNull("delete_time"));
         list.forEach(log -> {
@@ -249,10 +250,11 @@ public class TransferLogServiceImpl extends ServiceImpl<TransferLogMapper, Trans
     }
 
     private void dealOneLog(Long userId, Long logId, Boolean deleteFile) {
-        // 1. 验证并软删除传输日志本身
+        // 1. 验证并软删除传输日志本身 (这部分逻辑保持不变，是正确的)
         TransferLog transferLog = this.getOne(new QueryWrapper<TransferLog>()
                 .eq("id", logId)
                 .eq("user_id", userId)
+                .eq("log_status", "success")
                 .isNull("delete_time"));
 
         if (transferLog == null) {
@@ -270,38 +272,36 @@ public class TransferLogServiceImpl extends ServiceImpl<TransferLogMapper, Trans
         // 2. 如果用户选择同时“删除”关联项目，并且是上传记录
         if (deleteFile && transferLog.getTransferType() == TransferTypeEnum.UPLOAD) {
 
-            // 关键优化：使用 if-else if 结构，因为 file_id 和 folder_id 是互斥的
+            // 情况一：如果 file_id 存在，说明这是一条【单文件上传】的记录
             if (transferLog.getFileId() != null) {
-                // 2.1 情况一：关联的是文件
+
+                // 只需要软删除这个文件即可
                 filesService.update(new UpdateWrapper<Files>()
                         .eq("id", transferLog.getFileId())
-                        .eq("user_id", userId) // 确保操作的是自己的文件
-                        .set("delete_time", new Date())); // 软删除文件
+                        .eq("user_id", userId)
+                        .set("delete_time", new Date()));
 
+                // 情况二：如果 file_id 为 null，说明这是一条【文件夹转存】的记录
             } else if (transferLog.getFolderId() != null) {
-                // 2.2 情况二：关联的是文件夹
+                // （为严谨起见，加上 getFolderId() != null 的判断）
+
                 Long folderIdToDelete = transferLog.getFolderId();
 
-                try {
-                    // a. 软删除文件夹本身
-                    foldersService.update(new UpdateWrapper<Folders>()
-                            .eq("id", folderIdToDelete)
-                            .eq("user_id", userId)
-                            .set("delete_time", new Date()));
+                // a. 软删除文件夹本身
+                foldersService.update(new UpdateWrapper<Folders>()
+                        .eq("id", folderIdToDelete)
+                        .eq("user_id", userId)
+                        .set("delete_time", new Date()));
 
-                    // b. 软删除该文件夹下的所有文件
-                    filesService.update(new UpdateWrapper<Files>()
-                            .eq("folder_id", folderIdToDelete)
-                            .eq("user_id", userId)
-                            .set("delete_time", new Date()));
-                } catch (Exception e) {
-                    throw new LiteisleException(e.getMessage());
-                }
+                // b. 软删除该文件夹下的所有文件
+                filesService.update(new UpdateWrapper<Files>()
+                        .eq("folder_id", folderIdToDelete)
+                        .eq("user_id", userId)
+                        .set("delete_time", new Date()));
             }
         }
     }
 }
-
 
 
 
