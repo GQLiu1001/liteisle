@@ -177,7 +177,8 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
             Folders folder = foldersService.getOne(new QueryWrapper<Folders>()
                     .eq("id", shareLink.getFolderId())
                     .eq("user_id", ownerUserId)
-                    .eq("delete_time", null));
+                    .isNull("delete_time")
+                    );
             if (folder == null) {
                 throw new LiteisleException("分享文件夹不存在或已删除");
             }
@@ -192,7 +193,7 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
             Long count = filesService.count(new QueryWrapper<Files>()
                     .eq("folder_id", shareLink.getFolderId())
                     .eq("user_id", ownerUserId)
-                    .eq("delete_time", null));
+                    .isNull("delete_time"));
             shareInfoResp.setTotalFiles(count);
         }
 

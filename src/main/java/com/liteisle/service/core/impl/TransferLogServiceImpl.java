@@ -76,11 +76,11 @@ public class TransferLogServiceImpl extends ServiceImpl<TransferLogMapper, Trans
         long uploadCount = this.count(new QueryWrapper<TransferLog>()
                 .eq("user_id", userId)
                 .eq("transfer_type", TransferTypeEnum.UPLOAD)
-                .eq("delete_time", null));
+                .isNull("delete_time"));
         long downloadCount = this.count(new QueryWrapper<TransferLog>()
                 .eq("user_id", userId)
                 .eq("transfer_type", TransferTypeEnum.DOWNLOAD)
-                .eq("delete_time", null));
+                .isNull("delete_time"));
 
         return new TransferSummaryResp(uploadCount, downloadCount);
     }
@@ -93,7 +93,7 @@ public class TransferLogServiceImpl extends ServiceImpl<TransferLogMapper, Trans
         TransferLog one = this.getOne(new QueryWrapper<TransferLog>()
                 .eq("id", logId)
                 .eq("user_id", userId)
-                .eq("delete_time", null));
+                .isNull("delete_time"));
 
         if (one == null || !one.getLogStatus().equals(TransferStatusEnum.PROCESSING)) {
             throw new LiteisleException("所选log不存在");

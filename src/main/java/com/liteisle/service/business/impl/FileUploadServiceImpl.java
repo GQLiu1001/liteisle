@@ -125,11 +125,11 @@ public class FileUploadServiceImpl implements FileUploadService {
         fileRecord.setFileExtension(suffix);
         fileRecord.setFileType(fileType);
         fileRecord.setFileStatus(FileStatusEnum.PROCESSING);
-        fileRecord.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
+        fileRecord.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis() * 100000));
         fileRecord.setCreateTime(new Date());
         fileRecord.setUpdateTime(new Date());
         boolean saveFile = filesService.save(fileRecord);
-        if (!saveFile){
+        if (!saveFile) {
             throw new LiteisleException("创建初始文件记录失败");
         }
         // 2. 创建初始传输日志 (状态: PROCESSING)
@@ -147,7 +147,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         logRecord.setCreateTime(new Date());
         logRecord.setUpdateTime(new Date());
         boolean saveLog = transferLogService.save(logRecord);
-        if (!saveLog){
+        if (!saveLog) {
             throw new LiteisleException("创建初始传输日志失败");
         }
 
@@ -184,7 +184,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         //获取原本的storageId以及music meta数据
         Storages storages = storagesService.getOne(
                 new QueryWrapper<Storages>().eq("file_hash", fileHash));
-        if (storages == null){
+        if (storages == null) {
             return null;
         }
         Long storagesId = storages.getId();
@@ -205,7 +205,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             file2Save.setFileExtension(suffix);
             file2Save.setStorageId(storagesId);
             file2Save.setFileName(file.getOriginalFilename());
-            file2Save.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
+            file2Save.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis() * 100000));
             file2Save.setCreateTime(new Date());
             file2Save.setUpdateTime(new Date());
             boolean saveFile = filesService.save(file2Save);
@@ -240,7 +240,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             boolean update = storagesService.update(new UpdateWrapper<Storages>()
                     .eq("id", storagesId)
                     .setSql("reference_count = reference_count + 1"));
-            if (!update){
+            if (!update) {
                 throw new LiteisleException("更新文件引用计数失败");
             }
             return creatUploadResponse(file2Save, transferLog);
@@ -255,7 +255,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             file2Save.setFileExtension(suffix);
             file2Save.setStorageId(storagesId);
             file2Save.setFileName(file.getOriginalFilename());
-            file2Save.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
+            file2Save.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis() * 100000));
             file2Save.setCreateTime(new Date());
             file2Save.setUpdateTime(new Date());
             boolean saveFile = filesService.save(file2Save);
@@ -280,7 +280,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             boolean update = storagesService.update(new UpdateWrapper<Storages>()
                     .eq("id", storagesId)
                     .setSql("reference_count = reference_count + 1"));
-            if (!update){
+            if (!update) {
                 throw new LiteisleException("更新文件引用计数失败");
             }
             return creatUploadResponse(file2Save, transferLog);
@@ -303,7 +303,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         file2Save.setFileStatus(FileStatusEnum.AVAILABLE);
         file2Save.setFileExtension(suffix);
         file2Save.setFileName(file.getOriginalFilename());
-        file2Save.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
+        file2Save.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis() * 100000));
         file2Save.setCreateTime(new Date());
         file2Save.setUpdateTime(new Date());
         boolean save = filesService.save(file2Save);
@@ -366,7 +366,7 @@ public class FileUploadServiceImpl implements FileUploadService {
                     .eq("folder_type", FolderTypeEnum.SYSTEM)
                     .eq("folder_name", "上传")
                     .eq("parent_id", 0)
-                    .eq("delete_time", null)
+                    .isNull("delete_time")
                     .select("id"));
             if (uploadFolder == null) {
                 throw new LiteisleException("上传文件夹不存在");
