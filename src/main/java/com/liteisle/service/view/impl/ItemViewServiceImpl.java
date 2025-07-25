@@ -302,49 +302,54 @@ public class ItemViewServiceImpl implements ItemViewService {
         // 返回负数（比如 -1）: 代表 a 小于 b。
         // 返回 0: 代表 a 等于 b。
         // 返回正数（比如 1）: 代表 a 大于 b。
-        if (beforeOrder != null && afterOrder != null && beforeOrder.compareTo(afterOrder) >= 0) {
-            // 触发这个条件，说明数据已错乱（前一个比后一个大），应抛出异常或强制重排
-            throw new LiteisleException("排序位置无效，前后项目顺序错误");
+        if (beforeOrder != null && afterOrder != null && beforeOrder.compareTo(afterOrder) <= 0) {
+            Long parentFolderId = getParentFolderId(itemId, itemType, userId);
+            log.warn("排序数据出现错乱 (beforeOrder <= afterOrder), 文件夹ID: {} 将被重新索引", parentFolderId);
+            reindexCenter.reindexItemsInFolder(parentFolderId, userId);
+
+            beforeOrder = orderFetcher.apply(req.getBeforeId());
+            afterOrder = orderFetcher.apply(req.getAfterId());
+            if (beforeOrder.compareTo(afterOrder) <= 0) {
+                throw new LiteisleException("数据重排后依然错乱，请联系管理员。");
+            }
         }
 
-        // 3. 计算新的排序值
         BigDecimal newOrder;
         final BigDecimal MIN_PRECISION = new BigDecimal("1E-30");
 
-        // 情况一：在两个现有项之间插入 --> 使用【平均值法】
+        // --- 【降序模式下的排序值计算】 ---
+
+        // 情况一：在两个现有项之间插入
         if (beforeOrder != null && afterOrder != null) {
-            BigDecimal gap = afterOrder.subtract(beforeOrder);
-            // 如果两个值过于接近，以至于无法再平分，则触发重排
-            // (gap小于最小精度的两倍时，(a+b)/2可能会等于a或b)
+            BigDecimal gap = beforeOrder.subtract(afterOrder); // 降序模式下，gap = 大的(before) - 小的(after)
             if (gap.compareTo(MIN_PRECISION.multiply(BigDecimal.valueOf(2))) < 0) {
                 Long parentFolderId = getParentFolderId(itemId, itemType, userId);
                 log.warn("排序精度耗尽 (gap={}), 文件夹ID: {} 将被重新索引", gap, parentFolderId);
                 reindexCenter.reindexItemsInFolder(parentFolderId, userId);
 
-                // 重排后，重新获取排序值
                 beforeOrder = orderFetcher.apply(req.getBeforeId());
                 afterOrder = orderFetcher.apply(req.getAfterId());
             }
 
-            // 使用平均值算法计算中间值。指定30位小数精度和四舍五入规则，与数据库保持一致
+            // 平均值法对于升序和降序都一样
             newOrder = beforeOrder.add(afterOrder).divide(BigDecimal.valueOf(2), 30, RoundingMode.HALF_UP);
 
-            // 情况二：移动到列表最前面 (在 afterOrder 之前) --> 使用【大步长法】
+            // 情况二：移动到列表最前面 (在 afterOrder 之前)
         } else if (afterOrder != null) {
-            // 使用大步长递减，动态创造巨大的、新的排序空间
-            newOrder = afterOrder.subtract(BigDecimal.valueOf(REINDEX_STEP));
+            // 要排在最前面(值最大)，就需要一个比当前第一项(afterOrder)更大的值
+            newOrder = afterOrder.add(BigDecimal.valueOf(REINDEX_STEP));
 
-            // 情况三：移动到列表最后面 (在 beforeOrder 之后) --> 使用【大步长法】
+            // 情况三：移动到列表最后面 (在 beforeOrder 之后)
         } else if (beforeOrder != null) {
-            // 使用大步长递增，动态创造巨大的、新的排序空间
-            newOrder = beforeOrder.add(BigDecimal.valueOf(REINDEX_STEP));
+            // 要排在最后面(值最小)，就需要一个比当前最后一项(beforeOrder)更小的值
+            newOrder = beforeOrder.subtract(BigDecimal.valueOf(REINDEX_STEP));
 
             // 情况四：列表为空，插入第一个元素 (或创建新项)
         } else {
             newOrder = new BigDecimal(System.currentTimeMillis() * 100000L);
         }
 
-        // 4. 更新目标项目的排序值
+        // 更新目标项目的排序值
         orderUpdater.accept(itemId, newOrder);
     }
 

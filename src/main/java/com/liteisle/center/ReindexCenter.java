@@ -26,18 +26,12 @@ public class ReindexCenter {
     @Resource
     private FoldersService foldersService;
 
-    /**
-     * 对指定用户和文件夹下的所有项目（文件和文件夹）进行排序重建。
-     * 当排序精度耗尽时，可以调用此方法来重新分配排序值。
-     *
-     * @param folderId 需要重建索引的文件夹ID
-     * @param userId   用户ID
-     */
     @Transactional(rollbackFor = Exception.class)
     public void reindexItemsInFolder(Long folderId, Long userId) {
         log.warn("开始为文件夹ID: {} 和用户ID: {} 执行重新索引操作", folderId, userId);
 
         try {
+            // 基准值依然是当前时间戳，作为排序的“天花板”
             long baseSortOrder = System.currentTimeMillis() * 100000;
             AtomicLong sortOrderGenerator = new AtomicLong(baseSortOrder);
 
@@ -54,49 +48,36 @@ public class ReindexCenter {
         }
     }
 
-    /**
-     * 对指定父文件夹下的子文件夹进行重新排序。
-     * @param parentId 父文件夹ID
-     * @param userId 用户ID
-     * @param sortOrderGenerator 统一的排序值生成器
-     */
     private void reindexFolders(Long parentId, Long userId, AtomicLong sortOrderGenerator) {
+        // 【核心修改 1】查询顺序必须与最终展示顺序一致，改为 DESC
         List<Folders> folders = foldersService.list(new LambdaQueryWrapper<Folders>()
                 .eq(Folders::getParentId, parentId)
                 .eq(Folders::getUserId, userId)
-                .orderByAsc(Folders::getSortedOrder)); // 按现有顺序排序
+                .orderByDesc(Folders::getSortedOrder)); // 按现有顺序降序排序
 
         if (folders.isEmpty()) {
             return;
         }
 
-        // 【核心修改】使用 getAndAdd 方法，每次增加一个巨大的步长，而不是+1
-        folders.forEach(folder -> {
-            // getAndAdd会原子性地返回当前值，并加上步长值
-            folder.setSortedOrder(new BigDecimal(sortOrderGenerator.getAndAdd(REINDEX_STEP)));
-        });
+        // 【核心修改 2】要生成递减序列，步长应为负数
+        folders.forEach(folder -> folder.setSortedOrder(new BigDecimal(sortOrderGenerator.getAndAdd(-REINDEX_STEP))));
 
         foldersService.updateBatchById(folders);
     }
 
-    /**
-     * 对指定文件夹下的文件进行重新排序。
-     * @param folderId 文件夹ID
-     * @param userId 用户ID
-     * @param sortOrderGenerator 统一的排序值生成器
-     */
     private void reindexFiles(Long folderId, Long userId, AtomicLong sortOrderGenerator) {
+        // 【核心修改 1】查询顺序必须与最终展示顺序一致，改为 DESC
         List<Files> files = filesService.list(new LambdaQueryWrapper<Files>()
                 .eq(Files::getFolderId, folderId)
                 .eq(Files::getUserId, userId)
-                .orderByAsc(Files::getSortedOrder)); // 按现有顺序排序
+                .orderByDesc(Files::getSortedOrder)); // 按现有顺序降序排序
 
         if (files.isEmpty()) {
             return;
         }
 
-        // 【核心修改】同样使用 getAndAdd 方法，确保文件和文件夹都使用大步长策略
-        files.forEach(file -> file.setSortedOrder(new BigDecimal(sortOrderGenerator.getAndAdd(REINDEX_STEP))));
+        // 【核心修改 2】要生成递减序列，步长应为负数
+        files.forEach(file -> file.setSortedOrder(new BigDecimal(sortOrderGenerator.getAndAdd(-REINDEX_STEP))));
 
         filesService.updateBatchById(files);
     }
