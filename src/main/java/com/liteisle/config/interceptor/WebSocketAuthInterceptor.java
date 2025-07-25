@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @Slf4j
@@ -23,28 +25,69 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
      */
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
-        // HTTP Headers 在 ServerHttpRequest 中
-        // 前端在建立 WebSocket 连接时，需要在请求头中附带 Authorization: Bearer <token>
-        String authHeader = request.getHeaders().getFirst("Authorization");
 
+        // 方案1：从Authorization头获取token（保持现有逻辑）
+        String authHeader = request.getHeaders().getFirst("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-
-            // 使用你的 JwtUtil 验证 token
-            if (jwtUtil.validateToken(token)) {
-                Long userId = jwtUtil.getUserIdFromToken(token); // 确保这个方法是安全的
-                if (userId != null) {
-                    // 关键点3：将验证通过的用户ID放入 attributes
-                    // 后续在 WebSocketHandler 的 session.getAttributes().get("userId") 中可以获取
-                    attributes.put("userId", userId);
-                    log.info("WebSocket 握手认证成功, userId: {}", userId);
-                    return true; // 认证成功，允许握手
-                }
+            if (validateAndSetUser(token, attributes, "Header")) {
+                return true;
             }
         }
 
-        log.warn("WebSocket 握手认证失败，拒绝连接。");
-        return false; // 认证失败，拒绝握手
+        // 方案2：从URL参数获取token（新增支持）
+        String query = request.getURI().getQuery();
+        if (query != null) {
+            String token = extractTokenFromQuery(query);
+            if (token != null && validateAndSetUser(token, attributes, "URL参数")) {
+                return true;
+            }
+        }
+
+        log.warn("WebSocket 握手认证失败，拒绝连接。请求URI: {}", request.getURI());
+        return false;
+    }
+
+    /**
+     * 验证token并设置用户信息
+     */
+    private boolean validateAndSetUser(String token, Map<String, Object> attributes, String authMethod) {
+        try {
+            if (jwtUtil.validateToken(token)) {
+                Long userId = jwtUtil.getUserIdFromToken(token);
+                if (userId != null) {
+                    attributes.put("userId", userId);
+                    log.info("WebSocket 握手认证成功 ({}), userId: {}", authMethod, userId);
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("WebSocket token验证失败 ({}): {}", authMethod, e.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * 从查询字符串中提取token
+     */
+    private String extractTokenFromQuery(String query) {
+        if (query == null || query.isEmpty()) {
+            return null;
+        }
+
+        try {
+            for (String param : query.split("&")) {
+                if (param.startsWith("token=")) {
+                    String encodedToken = param.substring(6);
+                    // URL解码token
+                    return URLDecoder.decode(encodedToken, StandardCharsets.UTF_8);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("解析URL参数中的token失败: {}", e.getMessage());
+        }
+
+        return null;
     }
 
     /**
