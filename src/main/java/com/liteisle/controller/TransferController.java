@@ -71,7 +71,7 @@ public class TransferController {
     @DeleteMapping("/{log_id}")
     public Result<Void> deleteOneTransferLog(
             @PathVariable("log_id") Long logId,
-            @RequestParam(defaultValue = "false") Boolean deleteFile) {
+            @RequestParam(defaultValue = "false", name = "delete_file") Boolean deleteFile) {
         transferLogService.deleteOneTransferLog(logId, deleteFile);
         return Result.success();
     }
@@ -82,7 +82,7 @@ public class TransferController {
     @Operation(summary = "清空已完成的传输记录。", description = "清空已完成的传输记录")
     @DeleteMapping("/completed")
     public Result<Void> completedCleanTransferLog(
-            @RequestParam(defaultValue = "false") Boolean deleteFile) {
+            @RequestParam(defaultValue = "false", name = "delete_file") Boolean deleteFile) {
         transferLogService.completedCleanTransferLog(deleteFile);
         return Result.success();
     }
