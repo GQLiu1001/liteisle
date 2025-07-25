@@ -182,8 +182,11 @@ public class FileUploadServiceImpl implements FileUploadService {
             String fileHash, MultipartFile file, Long targetFolderId,
             Long userId, FileTypeEnum fileType, String suffix) {
         //获取原本的storageId以及music meta数据
+        // 【关键修复 #1】查询时，必须确保文件是“存活”的 (reference_count > 0)
         Storages storages = storagesService.getOne(
-                new QueryWrapper<Storages>().eq("file_hash", fileHash));
+                new QueryWrapper<Storages>()
+                        .eq("file_hash", fileHash)
+                        .gt("reference_count", 0)); // > 0, 避免与清理任务的竞争
         if (storages == null) {
             return null;
         }

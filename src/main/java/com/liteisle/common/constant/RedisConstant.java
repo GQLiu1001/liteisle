@@ -12,4 +12,6 @@ public class RedisConstant {
 
     public static final String SHARE_TOKEN_BLACKLIST_BLOOM = "bloom:share-token:blacklist:";
 
+    public static final String FILE_HASH_LOCK_PREFIX = "lock:filehash:";
+
 }

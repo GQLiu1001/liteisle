@@ -1,5 +1,6 @@
 package com.liteisle.center;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.liteisle.common.domain.Files;
 import com.liteisle.common.domain.MusicMetadata;
@@ -14,15 +15,16 @@ import com.liteisle.service.core.MusicMetadataService;
 import com.liteisle.service.core.StoragesService;
 import com.liteisle.service.core.TransferLogService;
 import com.liteisle.util.FFmpegUtil;
-import com.liteisle.util.MimeTypeUtil;
 import com.liteisle.util.MinioUtil;
 import com.liteisle.service.business.WebSocketService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -31,7 +33,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
+import static com.liteisle.common.constant.RedisConstant.FILE_HASH_LOCK_PREFIX;
 import static com.liteisle.common.constant.SystemConstant.DATA_BUCKET_PREFIX;
 
 @Slf4j
@@ -52,7 +56,12 @@ public class AsyncFileProcessingCenter {
     private TransferLogService transferLogService;
     @Resource
     private WebSocketService webSocketService;
-
+    @Resource
+    private RedissonClient redissonClient;
+    // 【关键修改 #1】注入自身的代理对象，使用 @Lazy 防止循环依赖
+    @Resource
+    @Lazy
+    private AsyncFileProcessingCenter self;
     /**
      * 【新增】异步处理转存分享文件的任务。
      * 它的核心工作是更新引用计数和文件/日志状态。
@@ -148,83 +157,113 @@ public class AsyncFileProcessingCenter {
     }
 
     /**
-     * 【修正版】处理新上传文件的异步任务
+     * 【最终正确版】处理新上传文件的异步任务。
+     * - 此方法只负责加锁和解锁，不应有 @Transactional 注解。
      */
-    @Async("virtualThreadPool") // 使用你的虚拟线程池执行异步任务
-    @Transactional(rollbackFor = Exception.class)
-    // 【关键修改】更新方法签名，接收字节数组和元数据
+    @Async("virtualThreadPool")
+    // 【关键修改 #2】移除这里的 @Transactional 注解！！！
     public void processNewFile(byte[] fileBytes, String originalFilename, long fileSize,
                                String mimeType, String fileHash, Long fileId, Long logId) {
+
+        String lockKey = FILE_HASH_LOCK_PREFIX + fileHash;
+        RLock lock = redissonClient.getLock(lockKey);
+
+        try {
+            boolean isLocked = lock.tryLock(10, 30, TimeUnit.SECONDS);
+            if (isLocked) {
+                try {
+                    // 【关键修改 #3】使用 self (代理对象) 来调用事务方法
+                    self.processNewFileInTransaction(fileBytes, originalFilename, fileSize, mimeType, fileHash, fileId, logId);
+                } catch (Exception e) {
+                    log.error("文件处理事务执行失败. FileId: {}, LogId: {}", fileId, logId, e);
+                    handleFailure(fileId, logId, e);
+                } finally {
+                    if (lock.isHeldByCurrentThread()) {
+                        lock.unlock();
+                    }
+                }
+            } else {
+                log.warn("获取 Redisson 锁失败，任务终止。FileId: {}, Hash: {}", fileId, fileHash);
+                handleFailure(fileId, logId, new Exception("系统繁忙，无法处理文件，请稍后重试"));
+            }
+        } catch (InterruptedException e) {
+            log.error("获取 Redisson 锁时被中断", e);
+            handleFailure(fileId, logId, e);
+            Thread.currentThread().interrupt();
+        }
+    }
+
+
+    /**
+     * 【关键修改 #4】真正在事务中执行的核心逻辑。
+     * - 此方法必须是 public，以便代理能够拦截。
+     * - 此方法必须有 @Transactional 注解。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void processNewFileInTransaction(byte[] fileBytes, String originalFilename, long fileSize,
+                                            String mimeType, String fileHash, Long fileId, Long logId) throws Exception {
+        // 这里的内部逻辑是完全正确的，无需修改
         File tempFile = null;
         try {
-            // 1. 【修改】将传入的 byte[] 转为临时 File，以便 FFmpeg 等工具处理
-            tempFile = File.createTempFile("upload-", "-" + originalFilename);
-            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-                fos.write(fileBytes);
-            }
-
-            // 2. 上传文件到 MinIO
-            String storagePath = DATA_BUCKET_PREFIX + fileHash.substring(0, 2) + "/" + fileHash.substring(2, 4) + "/" + fileHash;
-            // 【修改】调用 MinioUtil 的重载方法，传入字节流和元数据
-            minioUtil.uploadFile(new ByteArrayInputStream(fileBytes), fileSize, storagePath, mimeType);
-
-            // 3. 创建并保存 Storages 记录
-            Storages newStorage = new Storages();
-            newStorage.setFileHash(fileHash);
-            newStorage.setFileSize(fileSize); // 使用传入的 fileSize
-            newStorage.setMimeType(mimeType); // 使用传入的 mimeType
-            newStorage.setStoragePath(storagePath);
-            newStorage.setReferenceCount(1);
-            storagesService.save(newStorage);
-
-            // 4. 更新 Files 记录，关联 storage_id (逻辑不变)
             Files fileRecord = filesService.getById(fileId);
-            if (fileRecord == null) {
-                throw new IllegalStateException("文件记录丢失: " + fileId);
-            }
-            fileRecord.setStorageId(newStorage.getId());
-
-            // 5. 如果是音乐文件，提取元数据 (逻辑不变, 使用 tempFile)
+            if (fileRecord == null) throw new IllegalStateException("文件记录丢失: " + fileId);
             if (Objects.equals(fileRecord.getFileType(), FileTypeEnum.MUSIC)) {
+                tempFile = File.createTempFile("upload-", "-" + originalFilename);
+                try (FileOutputStream fos = new FileOutputStream(tempFile)) { fos.write(fileBytes); }
+            }
+
+            String storagePath = DATA_BUCKET_PREFIX + fileHash.substring(0, 2) + "/" + fileHash.substring(2, 4) + "/" + fileHash;
+            if (!minioUtil.objectExists(storagePath)) {
+                minioUtil.uploadFile(new ByteArrayInputStream(fileBytes), fileSize, storagePath, mimeType);
+            }
+
+            Storages existingStorage = storagesService.getOne(new QueryWrapper<Storages>().eq("file_hash", fileHash));
+            Storages storageToUse;
+            if (existingStorage != null) {
+                storagesService.update(new UpdateWrapper<Storages>().eq("id", existingStorage.getId()).setSql("reference_count = reference_count + 1"));
+                storageToUse = existingStorage;
+            } else {
+                Storages newStorage = new Storages();
+                newStorage.setFileHash(fileHash);
+                newStorage.setFileSize(fileSize);
+                newStorage.setMimeType(mimeType);
+                newStorage.setStoragePath(storagePath);
+                newStorage.setReferenceCount(1);
+                storagesService.save(newStorage);
+                storageToUse = newStorage;
+            }
+
+            fileRecord.setStorageId(storageToUse.getId());
+            if (Objects.equals(fileRecord.getFileType(), FileTypeEnum.MUSIC) && tempFile != null) {
                 handleMusicMetadata(tempFile.getAbsolutePath(), fileId);
             }
 
-            // 6. 更新文件状态为可用 (逻辑不变)
             fileRecord.setFileStatus(FileStatusEnum.AVAILABLE);
             filesService.updateById(fileRecord);
-
-            // 7. 更新传输日志为成功 (逻辑不变)
             updateTransferLog(logId, TransferStatusEnum.SUCCESS, null);
 
             log.info("文件处理成功. FileId: {}, LogId: {}", fileId, logId);
-
-            // 8. WebSocket 通知 (逻辑不变)
             webSocketService.sendFileStatusUpdate(
                     fileRecord.getUserId(), fileId, logId, FileStatusEnum.AVAILABLE, TransferStatusEnum.SUCCESS, fileRecord.getFileName(), null, 100
             );
-
-
-        } catch (Exception e) {
-            log.error("异步文件处理失败. FileId: {}, LogId: {}", fileId, logId, e);
-            // 发生任何异常，都将状态更新为失败
-            updateFileStatus(fileId, FileStatusEnum.FAILED);
-            updateTransferLog(logId, TransferStatusEnum.FAILED, e.getMessage());
-            
-            // WebSocket 通知前端文件处理失败
-            Files fileRecord = filesService.getById(fileId);
-            if (fileRecord != null) {
-                webSocketService.sendFileStatusUpdate(
-                        fileRecord.getUserId(), fileId, logId, FileStatusEnum.FAILED, TransferStatusEnum.FAILED, fileRecord.getFileName(), e.getMessage(), 0
-                );
-            }
         } finally {
-            // 9. 确保临时文件被删除
-            if (tempFile != null && tempFile.exists()) {
-                boolean delete = tempFile.delete();
-                if (!delete) {
-                    log.warn("临时文件删除失败: {}", tempFile.getAbsolutePath());
-                }
+            if (tempFile != null && tempFile.exists() && !tempFile.delete()) {
+                log.warn("临时文件删除失败: {}", tempFile.getAbsolutePath());
             }
+        }
+    }
+
+    /**
+     * 统一的失败处理逻辑
+     */
+    private void handleFailure(Long fileId, Long logId, Exception e) {
+        updateFileStatus(fileId, FileStatusEnum.FAILED);
+        updateTransferLog(logId, TransferStatusEnum.FAILED, e.getMessage());
+        Files fileRecord = filesService.getById(fileId);
+        if (fileRecord != null) {
+            webSocketService.sendFileStatusUpdate(
+                    fileRecord.getUserId(), fileId, logId, FileStatusEnum.FAILED, TransferStatusEnum.FAILED, fileRecord.getFileName(), e.getMessage(), 0
+            );
         }
     }
 

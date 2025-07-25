@@ -15,18 +15,24 @@ import com.liteisle.service.core.UsersService;
 import com.liteisle.util.MinioUtil; // <-- 【新增】导入MinioUtil
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.liteisle.common.constant.RedisConstant.FILE_HASH_LOCK_PREFIX;
 import static com.liteisle.common.constant.SystemConstant.*;
 
 /**
@@ -47,6 +53,15 @@ public class TaskCenter {
     private UsersService usersService;
     @Resource
     private MinioUtil minioUtil;
+
+    @Resource
+    private RedissonClient redissonClient; // 【修改】注入 RedissonClient
+
+    // 【关键修改 #1】注入自身的代理对象，使用 @Lazy 防止循环依赖
+    @Resource
+    @Lazy
+    private TaskCenter self;
+
 
     /**
      * [新增任务] 定期清理 failed 状态文件，释放用户存储额度。
@@ -142,10 +157,10 @@ public class TaskCenter {
 
     /**
      * [辅助任务] 定时清理物理上已无引用的文件。
-     * 策略：每天凌晨4点执行，晚于回收站清理任务。
+     * 【最终正确版】
      */
     @Scheduled(cron = "0 0 4 * * *")
-    @Transactional(rollbackFor = Exception.class)
+    // 【关键修改 #2】移除这里的 @Transactional 注解
     public void cleanupOrphanedStorages() {
         log.info("【定时任务】开始执行：清理孤立的物理存储文件...");
 
@@ -159,24 +174,53 @@ public class TaskCenter {
         }
 
         for (Storages storage : orphanStorages) {
+            if (!StringUtils.hasText(storage.getFileHash())) {
+                log.warn("发现缺少 file_hash 的 storage 记录，跳过处理。ID: {}", storage.getId());
+                continue;
+            }
+
+            String lockKey = FILE_HASH_LOCK_PREFIX + storage.getFileHash();
+            RLock lock = redissonClient.getLock(lockKey);
+
             try {
-                // 调用MinioUtil删除对应的物理文件
-                minioUtil.removeFile(storage.getStoragePath());
-                log.info("【物理删除】成功删除云端文件：{}", storage.getStoragePath());
-
-                // 云端物理文件删除成功后，再删除数据库记录
-                storagesService.removeById(storage.getId());
-
-            } catch (Exception e) {
-                // 如果云端删除失败，记录错误日志，本次事务会回滚，数据库记录不会被删除，等待下次重试
-                log.error("【物理删除】删除云端文件 {} 失败！错误：{}", storage.getStoragePath(), e.getMessage());
-                // 可选择抛出异常来触发整个批次的回滚
-                throw new LiteisleException(e.getMessage());
+                boolean isLocked = lock.tryLock(5, 10, TimeUnit.SECONDS);
+                if (isLocked) {
+                    try {
+                        Storages currentStorage = storagesService.getById(storage.getId());
+                        if (currentStorage != null && currentStorage.getReferenceCount() <= 0) {
+                            log.info("【Redisson锁成功】准备物理删除: {}", currentStorage.getStoragePath());
+                            // 【关键修改 #3】使用 self (代理对象) 调用事务方法
+                            self.cleanupStorageInTransaction(currentStorage);
+                        }
+                    } finally {
+                        if (lock.isHeldByCurrentThread()) {
+                            lock.unlock();
+                        }
+                    }
+                }
+            } catch (InterruptedException e) {
+                log.error("获取 Redisson 锁时被中断", e);
+                Thread.currentThread().interrupt();
             }
         }
-        log.info("【定时任务】成功清理了 {} 个孤立的物理文件记录。", orphanStorages.size());
+        log.info("【定时任务】本轮孤立文件清理检查完毕。");
     }
 
+    /**
+     * 【关键修改 #4】此方法现在是每个文件独立的事务单元。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void cleanupStorageInTransaction(Storages storage) {
+        try {
+            minioUtil.removeFile(storage.getStoragePath());
+            log.info("【物理删除】成功删除云端文件：{}", storage.getStoragePath());
+            storagesService.removeById(storage.getId());
+        } catch (Exception e) {
+            log.error("【物理删除】删除云端文件 {} 失败！错误：{}", storage.getStoragePath(), e.getMessage());
+            // 抛出异常以触发本方法的事务回滚
+            throw new LiteisleException(e.getMessage());
+        }
+    }
 
     /**
      * 根据文件列表恢复用户已使用的存储空间

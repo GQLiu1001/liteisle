@@ -162,4 +162,28 @@ public class MinioUtil {
             log.info("存储桶 '{}' 已存在。", bucketName);
         }
     }
+
+    /**
+     * 检查文件在 MinIO 中是否存在。
+     *
+     * @param fullObjectName 文件的完整对象名
+     * @return 如果文件存在则返回 true，否则返回 false。
+     */
+    public boolean objectExists(String fullObjectName) {
+        try {
+            // statObject 会在对象不存在时抛出异常，存在则返回对象信息
+            minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(this.defaultBucketName)
+                            .object(fullObjectName)
+                            .build()
+            );
+            return true;
+        } catch (Exception e) {
+            // MinIO Java SDK 在找不到对象时会抛出 ErrorResponseException
+            // 我们可以根据需要判断异常类型，但通常任何异常都意味着“我们无法确认它存在”
+            // 为简单起见，这里捕获通用异常并返回 false
+            return false;
+        }
+    }
 }
