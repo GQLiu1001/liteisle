@@ -14,6 +14,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.liteisle.common.constant.SystemConstant.REINDEX_STEP;
+
 @Slf4j
 @Component
 public class ReindexCenter {
@@ -36,25 +38,29 @@ public class ReindexCenter {
         log.warn("开始为文件夹ID: {} 和用户ID: {} 执行重新索引操作", folderId, userId);
 
         try {
+            long baseSortOrder = System.currentTimeMillis() * 100000;
+            AtomicLong sortOrderGenerator = new AtomicLong(baseSortOrder);
+
             // 1. 对文件夹进行重新索引
-            reindexFolders(folderId, userId);
+            reindexFolders(folderId, userId, sortOrderGenerator);
 
             // 2. 对文件进行重新索引
-            reindexFiles(folderId, userId);
+            reindexFiles(folderId, userId, sortOrderGenerator);
 
             log.info("成功完成文件夹ID: {} 和用户ID: {} 的重新索引", folderId, userId);
         } catch (Exception e) {
             log.error("为文件夹ID: {} 和用户ID: {} 执行重新索引时失败", folderId, userId, e);
-            // 抛出运行时异常以确保事务回滚
             throw new RuntimeException("重新索引操作失败", e);
         }
     }
 
     /**
      * 对指定父文件夹下的子文件夹进行重新排序。
+     * @param parentId 父文件夹ID
+     * @param userId 用户ID
+     * @param sortOrderGenerator 统一的排序值生成器
      */
-    private void reindexFolders(Long parentId, Long userId) {
-        // 查询出所有需要重新排序的文件夹
+    private void reindexFolders(Long parentId, Long userId, AtomicLong sortOrderGenerator) {
         List<Folders> folders = foldersService.list(new LambdaQueryWrapper<Folders>()
                 .eq(Folders::getParentId, parentId)
                 .eq(Folders::getUserId, userId)
@@ -64,23 +70,22 @@ public class ReindexCenter {
             return;
         }
 
-        // 使用原子长整数确保即使在同一毫秒内也能生成唯一的排序值
-        AtomicLong currentTime = new AtomicLong(System.currentTimeMillis() * 100000);
-
-        // 为每个文件夹分配新的排序值
+        // 【核心修改】使用 getAndAdd 方法，每次增加一个巨大的步长，而不是+1
         folders.forEach(folder -> {
-            folder.setSortedOrder(new BigDecimal(currentTime.getAndIncrement()));
+            // getAndAdd会原子性地返回当前值，并加上步长值
+            folder.setSortedOrder(new BigDecimal(sortOrderGenerator.getAndAdd(REINDEX_STEP)));
         });
 
-        // 批量更新
         foldersService.updateBatchById(folders);
     }
 
     /**
      * 对指定文件夹下的文件进行重新排序。
+     * @param folderId 文件夹ID
+     * @param userId 用户ID
+     * @param sortOrderGenerator 统一的排序值生成器
      */
-    private void reindexFiles(Long folderId, Long userId) {
-        // 查询出所有需要重新排序的文件
+    private void reindexFiles(Long folderId, Long userId, AtomicLong sortOrderGenerator) {
         List<Files> files = filesService.list(new LambdaQueryWrapper<Files>()
                 .eq(Files::getFolderId, folderId)
                 .eq(Files::getUserId, userId)
@@ -90,14 +95,9 @@ public class ReindexCenter {
             return;
         }
 
-        AtomicLong currentTime = new AtomicLong(System.currentTimeMillis() * 100000);
+        // 【核心修改】同样使用 getAndAdd 方法，确保文件和文件夹都使用大步长策略
+        files.forEach(file -> file.setSortedOrder(new BigDecimal(sortOrderGenerator.getAndAdd(REINDEX_STEP))));
 
-        // 为每个文件分配新的排序值
-        files.forEach(file -> {
-            file.setSortedOrder(new BigDecimal(currentTime.getAndIncrement()));
-        });
-
-        // 批量更新
         filesService.updateBatchById(files);
     }
 }

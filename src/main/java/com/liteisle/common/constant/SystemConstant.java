@@ -17,7 +17,7 @@ public class SystemConstant {
     /**
      * DATA_BUCKET_PREFIX - 哈希文件存储目录。
      * 所有文件根据其内容的哈希值存放，实现系统级去重。
-     * 示例: data/e3/b0/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+     * 示例: data/e3/b0/e3b0c44298fc1c149abs4c8996fb92427ae41e4649b934ca495991b7852b855
      */
     public static final String DATA_BUCKET_PREFIX = "data/";
 
@@ -29,4 +29,6 @@ public class SystemConstant {
             List.of("歌单", "书单", "上传", "分享");
 
     public static final int MAX_TOKEN_ATTEMPTS = 10;
+
+    public static final long REINDEX_STEP = 65536L;
 }

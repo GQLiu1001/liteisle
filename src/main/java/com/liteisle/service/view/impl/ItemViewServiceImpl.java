@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,9 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static com.liteisle.common.constant.SystemConstant.REINDEX_STEP;
+
 @Slf4j
 @Service
 public class ItemViewServiceImpl implements ItemViewService {
@@ -177,23 +181,6 @@ public class ItemViewServiceImpl implements ItemViewService {
             throw new LiteisleException("请求文件类型错误");
         }
         Long userId = UserContextHolder.getUserId();
-//        if (itemType.equals("folder")) {
-//            Folders one = foldersService.getOne(new QueryWrapper<Folders>()
-//                    .eq("id", itemId)
-//                    .eq("user_id", userId)
-//            );
-//            long count = filesService.count(new QueryWrapper<Files>().eq("folder_id", itemId));
-//            String path = getRelativePath(one.getId(), one.getFolderName());
-//            return new ItemDetailResp(
-//                    one.getId(),
-//                    one.getFolderName(),
-//                    ItemType.FOLDER,
-//                    count,
-//                    path,
-//                    one.getCreateTime(),
-//                    one.getUpdateTime()
-//            );
-//        }
         if (itemType.equals("folder")) {
             Folders one = foldersService.getOne(new QueryWrapper<Folders>()
                     .eq("id", itemId)
@@ -311,58 +298,50 @@ public class ItemViewServiceImpl implements ItemViewService {
         BigDecimal afterOrder = (req.getAfterId() == null) ? null : orderFetcher.apply(req.getAfterId());
 
         // 2. 增加健壮性检查
+        // a.compareTo(b)
+        // 返回负数（比如 -1）: 代表 a 小于 b。
+        // 返回 0: 代表 a 等于 b。
+        // 返回正数（比如 1）: 代表 a 大于 b。
         if (beforeOrder != null && afterOrder != null && beforeOrder.compareTo(afterOrder) >= 0) {
-            // 如果前一个item的order大于等于后一个，说明数据可能已错乱或传入ID有误
-            // 此时可以触发一次 re-indexing (重排序) 来修复数据
+            // 触发这个条件，说明数据已错乱（前一个比后一个大），应抛出异常或强制重排
             throw new LiteisleException("排序位置无效，前后项目顺序错误");
-            // 或者在这里调用 re-indexing 方法
         }
 
         // 3. 计算新的排序值
         BigDecimal newOrder;
-        // 最小允许的排序间隔，对应于DECIMAL(30,10)的最小正数0.0000000001
-        BigDecimal MIN_SORT_GAP = new BigDecimal("0.0000000001");
+        final BigDecimal MIN_PRECISION = new BigDecimal("1E-30");
 
-
-        // 情况一：在两个现有项之间插入
+        // 情况一：在两个现有项之间插入 --> 使用【平均值法】
         if (beforeOrder != null && afterOrder != null) {
-            BigDecimal actualGap = afterOrder.subtract(beforeOrder);
-
-            // 核心：如果间隔不足，触发重排
-            if (actualGap.compareTo(MIN_SORT_GAP) <= 0) {
-                // 获取父文件夹ID以进行重排
+            BigDecimal gap = afterOrder.subtract(beforeOrder);
+            // 如果两个值过于接近，以至于无法再平分，则触发重排
+            // (gap小于最小精度的两倍时，(a+b)/2可能会等于a或b)
+            if (gap.compareTo(MIN_PRECISION.multiply(BigDecimal.valueOf(2))) < 0) {
                 Long parentFolderId = getParentFolderId(itemId, itemType, userId);
-
-                log.warn("排序精度耗尽或间隔过小 ({} <= {}), 对文件夹ID: {} 进行重新索引",
-                        actualGap, MIN_SORT_GAP, parentFolderId);
+                log.warn("排序精度耗尽 (gap={}), 文件夹ID: {} 将被重新索引", gap, parentFolderId);
                 reindexCenter.reindexItemsInFolder(parentFolderId, userId);
 
-                // 重排后，重新获取最新的排序值
+                // 重排后，重新获取排序值
                 beforeOrder = orderFetcher.apply(req.getBeforeId());
                 afterOrder = orderFetcher.apply(req.getAfterId());
             }
 
-            // 无论是正常情况还是重排后，都使用微增法
-            newOrder = beforeOrder.add(MIN_SORT_GAP);
+            // 使用平均值算法计算中间值。指定30位小数精度和四舍五入规则，与数据库保持一致
+            newOrder = beforeOrder.add(afterOrder).divide(BigDecimal.valueOf(2), 30, RoundingMode.HALF_UP);
 
-            // 最终的健壮性检查，确保计算结果在区间内。
-            if (newOrder.compareTo(afterOrder) >= 0) {
-                log.error("即使在重排后，微增法计算的newOrder({})也超出了afterOrder({})的范围。" +
-                        "系统可能存在严重的数据排序问题。", newOrder, afterOrder);
-                throw new LiteisleException("排序计算失败，请联系管理员或重试。");
-            }
-
-            // 情况二：移动到列表最前面
+            // 情况二：移动到列表最前面 (在 afterOrder 之前) --> 使用【大步长法】
         } else if (afterOrder != null) {
-            newOrder = afterOrder.subtract(MIN_SORT_GAP);
+            // 使用大步长递减，动态创造巨大的、新的排序空间
+            newOrder = afterOrder.subtract(BigDecimal.valueOf(REINDEX_STEP));
 
-            // 情况三：移动到列表最后面
+            // 情况三：移动到列表最后面 (在 beforeOrder 之后) --> 使用【大步长法】
         } else if (beforeOrder != null) {
-            newOrder = beforeOrder.add(MIN_SORT_GAP);
+            // 使用大步长递增，动态创造巨大的、新的排序空间
+            newOrder = beforeOrder.add(BigDecimal.valueOf(REINDEX_STEP));
 
             // 情况四：列表为空，插入第一个元素 (或创建新项)
         } else {
-            newOrder = BigDecimal.valueOf(System.currentTimeMillis() * 100000L);
+            newOrder = new BigDecimal(System.currentTimeMillis() * 100000L);
         }
 
         // 4. 更新目标项目的排序值
@@ -440,22 +419,48 @@ public class ItemViewServiceImpl implements ItemViewService {
         }
     }
 
+    /**
+     * 获取给定文件夹的根父级文件夹（一级目录）。
+     *
+     * @param folder 当前文件夹对象
+     * @param userId 用户ID
+     * @return 根父级文件夹，如果找不到或数据异常则返回null
+     */
     private Folders getRootParentFolder(Folders folder, Long userId) {
+        // 1. 基本情况：如果当前文件夹本身就是一级目录，直接返回。
         if (folder.getParentId() == 0) {
-            return folder; // 它自己就是一级目录
+            return folder;
         }
-        // 循环向上查找，直到 parent_id == 0
+
+        // 2. 循环向上查找根目录
         Long currentParentId = folder.getParentId();
-        while (currentParentId != null && currentParentId != 0) {
+
+        // 3. 安全哨兵：设置最大查找深度，防止因数据错误（如A是B的父级，B又是A的父级）导致无限循环。
+        int maxDepth = 20;
+
+        while (maxDepth-- > 0) {
             Folders parent = foldersService.getOne(new LambdaQueryWrapper<Folders>()
                     .eq(Folders::getId, currentParentId)
                     .eq(Folders::getUserId, userId));
-            if (parent == null) return null;
-            if (parent.getParentId() == 0) return parent;
+
+            // 如果中途找不到父级，说明数据断裂，返回null
+            if (parent == null) {
+                return null;
+            }
+
+            // 如果找到了根（父级的父级ID为0），则返回这个父级
+            if (parent.getParentId() == 0) {
+                return parent;
+            }
+
+            // 继续向上查找
             currentParentId = parent.getParentId();
         }
+
+        // 如果循环结束仍未找到（通常是因为达到了最大深度），返回null，防止程序出错。
         return null;
     }
+
 
     /**
      * 优化：使用批量操作复制文件，并增加存储配额检查 (修正版)

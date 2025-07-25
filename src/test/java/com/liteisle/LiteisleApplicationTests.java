@@ -51,11 +51,11 @@ class LiteisleApplicationTests {
         final int scale = 30;
 
         // 模拟排序操作的初始边界。
-        // 为了清晰，我们选择0和1作为起点，它们之间的距离不影响最终的迭代次数。
+        // 为了清晰，我们选择0和1作为起点，它们之间的距离不影响最终的迭代次数。 122次
         BigDecimal beforeOrder = new BigDecimal(System.currentTimeMillis()*100000);
         Thread.sleep(10);
         BigDecimal afterOrder = new BigDecimal(System.currentTimeMillis()*100000);
-//        BigDecimal beforeOrder = new BigDecimal(System.currentTimeMillis());
+//        BigDecimal beforeOrder = new BigDecimal(System.currentTimeMillis()); //105次
 //        Thread.sleep(10);
 //        BigDecimal afterOrder = new BigDecimal(System.currentTimeMillis());
         int operationsCount = 0; // 操作计数器
