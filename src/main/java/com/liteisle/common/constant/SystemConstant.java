@@ -31,4 +31,14 @@ public class SystemConstant {
     public static final int MAX_TOKEN_ATTEMPTS = 10;
 
     public static final long REINDEX_STEP = 65536L;
+
+    // 定义回收站文件保留期限（天）
+    public static final int RECYCLE_BIN_RETENTION_DAYS = 30;
+
+    // 定义每次任务处理的条目数，防止内存溢出和长时间的数据库锁定
+    public static final int BATCH_SIZE = 100;
+
+    // 定义失败文件保留期限（小时），给可能的重试机制留出时间
+    public static final int FAILED_FILE_RETENTION_HOURS = 24;
+
 }

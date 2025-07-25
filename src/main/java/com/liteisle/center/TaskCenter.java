@@ -6,6 +6,7 @@ import com.liteisle.common.domain.Files;
 import com.liteisle.common.domain.Folders;
 import com.liteisle.common.domain.Storages;
 import com.liteisle.common.domain.Users;
+import com.liteisle.common.enums.FileStatusEnum;
 import com.liteisle.common.exception.LiteisleException;
 import com.liteisle.service.core.FilesService;
 import com.liteisle.service.core.FoldersService;
@@ -26,12 +27,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static com.liteisle.common.constant.SystemConstant.*;
+
 /**
  * 后台定时任务中心
  */
 @Slf4j
 @Service
-@EnableScheduling // 确保您的Spring Boot主应用也有 @EnableScheduling 注解
+@EnableScheduling
 public class TaskCenter {
 
     @Resource
@@ -44,12 +47,44 @@ public class TaskCenter {
     private UsersService usersService;
     @Resource
     private MinioUtil minioUtil;
-    //TODO 定期清理 failed 状态文件 释放用户存储额度
 
-    // 定义回收站文件保留期限（天）
-    private static final int RECYCLE_BIN_RETENTION_DAYS = 30;
-    // 定义每次任务处理的条目数，防止内存溢出和长时间的数据库锁定
-    private static final int BATCH_SIZE = 100;
+    /**
+     * [新增任务] 定期清理 failed 状态文件，释放用户存储额度。
+     * 策略：每天凌晨3点执行。
+     */
+    @Scheduled(cron = "0 0 3 * * *")
+    @Transactional(rollbackFor = Exception.class)
+    public void cleanupFailedFiles() {
+        log.info("【定时任务】开始执行：清理失败状态的文件...");
+        LocalDateTime expirationTime = LocalDateTime.now().minusHours(FAILED_FILE_RETENTION_HOURS);
+
+        // 1. 分批查找超过24小时的、状态为"failed"的文件
+        // 假设您的Files实体有status字段，并且您有一个FileStatus枚举，其中包含FAILED状态
+        List<Files> failedFiles = filesService.list(new LambdaQueryWrapper<Files>()
+                .eq(Files::getFileStatus, FileStatusEnum.FAILED)
+                .lt(Files::getCreateTime, expirationTime) // 按创建时间判断
+                .last("LIMIT " + BATCH_SIZE));
+
+        if (CollectionUtils.isEmpty(failedFiles)) {
+            log.info("【定时任务】执行完毕：没有找到需要清理的失败文件。");
+            return;
+        }
+
+        log.info("【定时任务】发现 {} 个失败文件待处理...", failedFiles.size());
+
+        // 2.3.4.合并修改用户额度
+        restoreUserStorageQuota(failedFiles);
+
+
+        // 5. 永久删除文件表和存储表中的记录
+        List<Long> fileIdsToDelete = failedFiles.stream().map(Files::getId).collect(Collectors.toList());
+        if (!fileIdsToDelete.isEmpty()) {
+            filesService.removeByIds(fileIdsToDelete);
+            log.info("【定时任务】成功从数据库中永久删除了 {} 个失败的Files记录。", fileIdsToDelete.size());
+        }
+
+        log.info("【定时任务】本轮失败文件清理执行完毕。");
+    }
 
     /**
      * [核心任务] 定时清理回收站中已过期的逻辑文件和文件夹。
@@ -82,36 +117,8 @@ public class TaskCenter {
 
         log.info("【定时任务】发现 {} 个过期文件待处理...", expiredFiles.size());
 
-        // 3. 按用户ID分组，以批量恢复用户额度
-        Map<Long, List<Files>> filesByUser = expiredFiles.stream()
-                .filter(f -> f.getUserId() != null && f.getStorageId() != null)
-                .collect(Collectors.groupingBy(Files::getUserId));
-
-        // 4. 获取文件大小信息
-        List<Long> storageIds = expiredFiles.stream()
-                .map(Files::getStorageId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.toList());
-
-        Map<Long, Long> storageIdToSizeMap = storagesService.listByIds(storageIds).stream()
-                .collect(Collectors.toMap(Storages::getId, Storages::getFileSize));
-
-        // 5. 遍历用户，返还配额
-        for (Map.Entry<Long, List<Files>> entry : filesByUser.entrySet()) {
-            Long userId = entry.getKey();
-            List<Files> userFiles = entry.getValue();
-            long quotaToRestore = userFiles.stream()
-                    .mapToLong(file -> storageIdToSizeMap.getOrDefault(file.getStorageId(), 0L))
-                    .sum();
-
-            if (quotaToRestore > 0) {
-                usersService.update(new UpdateWrapper<Users>()
-                        .eq("id", userId)
-                        .setSql("storage_used = GREATEST(0, storage_used - " + quotaToRestore + ")"));
-                log.info("【定时任务】为用户ID {} 恢复了 {} 字节的存储空间。", userId, quotaToRestore);
-            }
-        }
+        // 3.4.5. 合并修改用户额度
+        restoreUserStorageQuota(expiredFiles);
 
         // 6. 减少物理文件的引用计数
         Map<Long, Long> refCountToDecrement = expiredFiles.stream()
@@ -169,4 +176,41 @@ public class TaskCenter {
         }
         log.info("【定时任务】成功清理了 {} 个孤立的物理文件记录。", orphanStorages.size());
     }
+
+
+    /**
+     * 根据文件列表恢复用户已使用的存储空间
+     */
+    private void restoreUserStorageQuota(List<Files> files) {
+        if (CollectionUtils.isEmpty(files)) return;
+
+        Map<Long, List<Files>> filesByUser = files.stream()
+                .filter(f -> f.getUserId() != null && f.getStorageId() != null)
+                .collect(Collectors.groupingBy(Files::getUserId));
+
+        List<Long> storageIds = files.stream()
+                .map(Files::getStorageId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, Long> storageIdToSizeMap = storagesService.listByIds(storageIds).stream()
+                .collect(Collectors.toMap(Storages::getId, Storages::getFileSize));
+
+        for (Map.Entry<Long, List<Files>> entry : filesByUser.entrySet()) {
+            Long userId = entry.getKey();
+            List<Files> userFiles = entry.getValue();
+            long quotaToRestore = userFiles.stream()
+                    .mapToLong(file -> storageIdToSizeMap.getOrDefault(file.getStorageId(), 0L))
+                    .sum();
+
+            if (quotaToRestore > 0) {
+                usersService.update(new UpdateWrapper<Users>()
+                        .eq("id", userId)
+                        .setSql("storage_used = GREATEST(0, storage_used - " + quotaToRestore + ")"));
+                log.info("【定时任务】为用户ID {} 恢复了 {} 字节的存储空间。", userId, quotaToRestore);
+            }
+        }
+    }
+
 }
