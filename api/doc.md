@@ -130,6 +130,7 @@
 - 文档页面与音乐页面逻辑相似，但提供 “新建 MD” 按钮，可快速新建文件夹。
 - 双击文件可进入对应渲染视图，对 PPT、doc、pdf 等文件只进行渲染，不支持编辑。
 - 在 MD 视图中，提供 “保存” 按钮或使用 “Ctrl + S” 快捷键进行保存，支持一般快捷键操作。进入 MD 视图时，音乐栏自动收起，为编辑页面最大化让步，用户可自行展开，左上角提供返回目录的按钮。
+- md文档里粘贴图片：1.没设置picgo 保存本地 2.设置picgo 自动上传
 
 ### （五）设置页面
 
@@ -161,6 +162,209 @@
 #### 5. 关于
 
 显示应用的版本号。
+
+## 三、SQL文件
+
+```sql
+CREATE DATABASE IF NOT EXISTS `liteisle_db`
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_general_ci;
+
+USE `liteisle_db`;
+
+-- =================================================================
+-- 用户核心模块 (User Core Module)
+-- 作用: 管理所有与用户账户、身份、配置和游戏化激励相关的数据。
+-- =================================================================
+
+-- ----------------------------
+-- 1. 用户表 (users)
+-- 描述: 存储用户的核心账户信息、认证凭据和云盘空间配额。
+-- ----------------------------
+CREATE TABLE `users` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户唯一标识ID (主键)',
+  `username` varchar(50) NOT NULL COMMENT '用户名，用于登录，全系统唯一',
+  `email` varchar(100) NOT NULL COMMENT '用户邮箱，用于登录和接收通知，全系统唯一',
+  `password` varchar(255) NOT NULL COMMENT '加密后的用户密码 (例如使用BCrypt)',
+  `avatar` varchar(512) DEFAULT NULL COMMENT '用户头像的URL地址',
+  `storage_quota` bigint DEFAULT 5368709120 COMMENT '用户总存储空间配额，单位：字节 (Bytes)，默认5GB',
+  `storage_used` bigint DEFAULT 0 COMMENT '用户已使用的存储空间，单位：字节 (Bytes)，通过异步消息队列在文件操作后更新',
+  `create_time` timestamp DEFAULT CURRENT_TIMESTAMP COMMENT '账户创建时间',
+  `update_time` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '账户信息最后更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_username` (`username`),
+  UNIQUE KEY `uk_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户账户与基本信息表';
+
+-- ----------------------------
+-- 2. 用户专注记录表 (user_focus_records)
+-- 描述: 记录用户的每一次专注会话。
+-- ----------------------------
+CREATE TABLE `user_focus_records` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '专注记录唯一ID (主键)',
+  `user_id` bigint NOT NULL COMMENT '外键，关联到 users.id，标识该记录所属的用户',
+  `focus_minutes` int DEFAULT 0 COMMENT '单次完整专注会话的时长（单位：分钟）',
+  `create_time` timestamp DEFAULT CURRENT_TIMESTAMP COMMENT '专注完成并记录的时间点',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_focus_time` (`user_id`, `create_time` DESC),
+  CONSTRAINT `fk_focus_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户单次专注会话记录表';
+
+-- ----------------------------
+-- 3. 用户岛屿收集表 (user_islands)
+-- 描述: 记录用户通过专注等行为解锁收集到的所有岛屿。
+-- ----------------------------
+CREATE TABLE `user_islands` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '收集记录的唯一ID (主键)',
+  `user_id` bigint NOT NULL COMMENT '外键，关联到 users.id，标识该岛屿的拥有者',
+  `island_url` varchar(255) NOT NULL COMMENT '岛屿的唯一业务代码，与后端代码中的岛屿配置相对应',
+  `create_time` timestamp DEFAULT CURRENT_TIMESTAMP COMMENT '岛屿的获取时间',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_user_islands_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='记录用户已解锁的岛屿表';
+
+
+
+-- =================================================================
+-- 文件系统模块 (File System Module)
+-- 作用: 管理所有与文件、文件夹相关的物理存储和逻辑结构。
+-- =================================================================
+
+-- ----------------------------
+-- 4. 物理文件存储表 (storages)
+-- 描述: 存储物理文件的唯一实体信息。通过文件哈希实现秒传和存储去重。
+-- ----------------------------
+CREATE TABLE `storages` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '物理存储记录ID (主键)',
+  `file_hash` varchar(64) NOT NULL COMMENT '文件内容的哈希值 (SHA-256)，用于秒传功能的核心校验',
+  `file_size` bigint NOT NULL COMMENT '文件大小，单位：字节 (Bytes)',
+  `mime_type` varchar(100) NOT NULL COMMENT '文件的MIME类型，例如 "audio/mpeg", "application/pdf"',
+  `storage_path` varchar(512) NOT NULL COMMENT '文件在对象存储服务(如R2)中的唯一路径或Key',
+  `reference_count` int DEFAULT 1 COMMENT '引用计数。当计数值为0时，可由后台垃圾回收任务安全删除物理文件',
+  `create_time` timestamp DEFAULT CURRENT_TIMESTAMP COMMENT '该物理文件首次被上传到系统的时间',
+  `update_time` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录的最后更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_file_hash` (`file_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='存储唯一文件实体，实现秒传功能';
+
+-- ----------------------------
+-- 5. 文件夹表 (folders)
+-- 描述: 存储用户可见的逻辑文件夹结构。
+-- ----------------------------
+CREATE TABLE `folders` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '文件夹唯一ID (主键)',
+  `user_id` bigint NOT NULL COMMENT '外键，关联到 users.id，标识此文件夹的拥有者',
+  `parent_id` bigint DEFAULT 0 COMMENT '父文件夹ID。值为0表示根目录下的文件夹',
+  `folder_name` varchar(255) NOT NULL COMMENT '文件夹在UI上显示的名称',
+  `folder_type` enum('system', 'playlist', 'booklist') NOT NULL COMMENT '只有 system, playlist, booklist 三类。',
+  `sorted_order` decimal(60, 30) DEFAULT 0 COMMENT '用于用户自定义排序的浮点数值',
+  `delete_time` timestamp NULL DEFAULT NULL COMMENT '软删除标记。非NULL表示已移入回收站',
+  `create_time` timestamp DEFAULT CURRENT_TIMESTAMP COMMENT '文件夹创建时间',
+  `update_time` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '文件夹最后更新时间（如重命名）',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_parent` (`user_id`, `parent_id`),
+  CONSTRAINT `fk_folders_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户逻辑文件夹结构表';
+
+-- ----------------------------
+-- 6. 文件基础信息表 (files)
+-- 描述: 存储所有文件的通用基础信息，作为文件实体的核心。
+-- ----------------------------
+CREATE TABLE `files` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '文件唯一ID (主键)',
+  `user_id` bigint NOT NULL COMMENT '外键，关联到 users.id，标识此文件的拥有者',
+  `folder_id` bigint NOT NULL COMMENT '外键，关联到 folders.id，标识文件所在的文件夹',
+  `storage_id` bigint DEFAULT NULL COMMENT '外键，关联到 storages.id，文件处理成功后填充',
+  `file_name` varchar(255) NOT NULL COMMENT '文件名（通常包含扩展名）',
+  `file_extension` varchar(20) DEFAULT NULL COMMENT '文件扩展名，如 "mp3", "pdf", 用于前端显示',
+  `file_type` enum('music', 'document') NOT NULL COMMENT '文件的业务大类，用于甄别应关联哪个元数据表',
+  `file_status` enum('processing', 'available', 'failed') NOT NULL DEFAULT 'processing' COMMENT '文件状态。processing:后台处理中; available:完全可用; failed:处理失败',
+  `sorted_order` decimal(60, 30) DEFAULT 0 COMMENT '用于用户自定义排序的浮点数值',
+  `delete_time` timestamp NULL DEFAULT NULL COMMENT '软删除标记。非NULL表示已移入回收站',
+  `create_time` timestamp DEFAULT CURRENT_TIMESTAMP COMMENT '文件逻辑记录的创建时间',
+  `update_time` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '文件元数据的最后更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_folder_status` (`user_id`, `folder_id`, `file_status`),
+  CONSTRAINT `fk_files_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_files_folder` FOREIGN KEY (`folder_id`) REFERENCES `folders` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_files_storage` FOREIGN KEY (`storage_id`) REFERENCES `storages` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件通用基础信息表';
+
+-- ----------------------------
+-- 7. 音乐文件元数据表 (music_metadata)
+-- 描述: 存储音乐文件专属的元数据。
+-- ----------------------------
+CREATE TABLE `music_metadata` (
+  `file_id` bigint NOT NULL COMMENT '主键，同时也是外键，关联到 files.id',
+  `artist` varchar(255) DEFAULT NULL COMMENT '歌手名，由后台FFmpeg等工具解析填充',
+  `album` varchar(255) DEFAULT NULL COMMENT '专辑名',
+  `duration` int NOT NULL COMMENT '时长，单位：秒',
+  CONSTRAINT `fk_music_file` FOREIGN KEY (`file_id`) REFERENCES `files` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='音乐文件专属元数据表';
+
+-- ----------------------------
+-- 8. 文档文件元数据表 (document_metadata)
+-- 描述: 存储文档文件专属的元数据。
+-- ----------------------------
+CREATE TABLE `document_metadata` (
+  `file_id` bigint NOT NULL COMMENT '主键，同时也是外键，关联到 files.id',
+  `content` longtext COMMENT 'Markdown文件的纯文本内容，用于全文搜索',
+  `version` bigint NOT NULL DEFAULT 1 COMMENT '用于Markdown文件的乐观锁版本号',
+  PRIMARY KEY (`file_id`),
+  CONSTRAINT `fk_document_file` FOREIGN KEY (`file_id`) REFERENCES `files` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文档文件专属元数据表';
+
+-- =================================================================
+-- 分享与传输模块 (Sharing & Transfer Module)
+-- 作用: 管理所有与文件分享、上传下载任务相关的业务数据和日志。
+-- =================================================================
+
+-- ----------------------------
+-- 9. 分享表 (share_links)
+-- 描述: 管理用户创建的所有公开分享链接。
+-- ----------------------------
+CREATE TABLE `share_links` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '分享记录唯一ID (主键)',
+  `owner_id` bigint NOT NULL COMMENT '外键，关联到 users.id，标识分享的创建者',
+  `share_token` varchar(64) NOT NULL COMMENT '分享链接的唯一公开凭证，是URL的一部分',
+  `share_password` varchar(255) DEFAULT NULL COMMENT '加密后的分享提取码（如果分享是加密的）',
+  `file_id` bigint DEFAULT NULL COMMENT '外键，关联到 files.id，当分享目标是单个文件时填充',
+  `folder_id` bigint DEFAULT NULL COMMENT '外键，关联到 folders.id，当分享目标是文件夹时填充',
+  `expire_time` timestamp NULL DEFAULT NULL COMMENT '分享链接的过期时间，NULL表示永久有效',
+  `create_time` timestamp DEFAULT CURRENT_TIMESTAMP COMMENT '分享创建时间',
+  `update_time` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '分享信息更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_share_token` (`share_token`),
+  CONSTRAINT `fk_share_user` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `chk_share_target` CHECK ((`file_id` IS NOT NULL AND `folder_id` IS NULL) OR (`file_id` IS NULL AND `folder_id` IS NOT NULL))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理公开分享链接';
+
+-- ----------------------------
+-- 10. 传输日志表 (transfer_log)
+-- 描述: 记录每一次上传和下载操作，为“传输列表”页面提供数据。
+-- ----------------------------
+CREATE TABLE `transfer_log` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '传输日志唯一ID (主键)',
+  `user_id` bigint NOT NULL COMMENT '外键，关联到 users.id，标识操作用户',
+  `transfer_type` enum('upload', 'download') NOT NULL COMMENT '传输类型：上传或下载',
+  `file_id` bigint DEFAULT NULL COMMENT '外键，关联到 files.id (如果传输对象是单个文件)',
+  `folder_id` bigint DEFAULT NULL COMMENT '外键，关联到 folders.id (如果传输对象是文件夹)',
+  `item_name` varchar(255) NOT NULL COMMENT '被传输项目（文件/文件夹）的名称，做冗余以备查询',
+  `item_size` bigint NOT NULL COMMENT '被传输项目的总大小，单位：字节 (Bytes)',
+  `log_status` enum('processing','paused', 'success', 'failed', 'canceled') NOT NULL DEFAULT 'processing' COMMENT '传输行为状态: 处理中, 暂停，成功, 失败, 已取消',
+  `error_message` varchar(512) DEFAULT NULL COMMENT '当status为failed或canceled时，记录相关信息',
+  `transfer_duration_ms` bigint DEFAULT NULL COMMENT '传输总耗时，单位：毫秒 (ms)',
+  `client_ip` varchar(45) DEFAULT NULL COMMENT '发起传输的客户端IP地址，用于安全审计',
+  `delete_time` timestamp NULL DEFAULT NULL COMMENT '软删除标记，非NULL表示已对用户隐藏',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '传输任务创建时间',
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '传输任务状态的最后更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_status_time` (`user_id`, `log_status`, `create_time` DESC),
+  CONSTRAINT `fk_tlog_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_tlog_file` FOREIGN KEY (`file_id`) REFERENCES `files` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_tlog_folder` FOREIGN KEY (`folder_id`) REFERENCES `folders` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件上传下载行为日志表';
+```
 
 # API文档
 
@@ -928,10 +1132,6 @@
     - 如果 type 是 file，则使用提供的 download_url 下载文件到 relative_path。
 3. **更新状态**：在每个文件下载结束时（成功、失败、取消），客户端调用 PUT /transfers/{log_id}/status (见 5.5 节) 来更新该任务的最终状态。
 
-#### ~~4.3 图片上传接口（专门处理md文档图片）~~
-
-注意：由前端粘贴上传图到本地磁盘或者picgo代替上传
-
 ### **5. 传输管理 (Transfer Management)**
 
 #### **5.1. 获取传输任务摘要**
@@ -1343,6 +1543,30 @@
 ```
 
 > **备注:** 返回参数为新创建文档的id。
+
+##### **6.2.6.获取MD文档版本号**
+
+`GET /documents/md-version/{file_id}`
+
+**描述:** 前端在触发保存获取到200成功后 请求更新版本号以便下次保存时传递。
+
+**路径参数:**
+
+| 参数      | 类型 | 描述                         |
+| :-------- | :--- | :--------------------------- |
+| `file_id` | Long | 要保存的 Markdown 文件的ID。 |
+
+**响应:**
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": 31
+}
+```
+
+> **备注:** 返回参数为md版本号
 
 ---
 
@@ -1838,166 +2062,3 @@
 | translated_text | String | 翻译后的文本。                 |
 
 ---
-
-# LiteIsle 前后端接口操作对应表格
-
-## 概述
-本文档详细记录了LiteIsle项目中所有前后端接口的操作对应关系，包括API端点、HTTP方法、功能描述、涉及的数据库表操作、业务逻辑等详细信息。
-
-## 数据库表说明
-
-### 核心业务表
-- **users**: 用户账户与基本信息表
-- **folders**: 用户逻辑文件夹结构表
-- **files**: 用户文件逻辑记录表
-- **storages**: 存储唯一文件实体表（实现秒传功能）
-
-### 元数据表
-- **document_metadata**: 文档文件专属元数据表
-- **music_metadata**: 音乐文件专属元数据表
-
-### 功能扩展表
-- **share_links**: 管理公开分享链接表
-- **user_focus_records**: 用户单次专注会话记录表
-- **user_islands**: 记录用户已解锁的岛屿表
-- **transfer_log**: 文件上传下载行为日志表
-
-### 缓存存储
-- **Redis**: 签到功能Bitmap、验证码缓存、JWT token缓存
-
----
-
-## 接口操作对应表格
-
-### 1. 用户认证模块 (AuthController)
-
-| 接口路径 | HTTP方法 | 功能描述 | 数据库操作 | 涉及表 | 业务逻辑 |
-|---------|---------|---------|-----------|--------|----------|
-| `/auth/login` | POST | 用户登录 | 查询用户信息，验证密码 | users | 1. 根据用户名查询用户<br>2. 验证密码<br>3. 生成JWT token<br>4. 返回用户信息和token |
-| `/auth/register` | POST | 用户注册 | 插入新用户记录，创建默认文件夹 | users, folders | 1. 验证邮箱格式和验证码<br>2. 检查用户名唯一性<br>3. 创建用户记录<br>4. 创建默认系统文件夹<br>5. 生成JWT token |
-| `/auth/send-vcode` | POST | 发送验证码 | Redis缓存验证码 | Redis | 1. 生成6位随机验证码<br>2. 存储到Redis（5分钟过期）<br>3. 发送邮件 |
-| `/auth/forgot-password` | POST | 忘记密码 | 更新用户密码 | users | 1. 验证用户名、邮箱、验证码<br>2. 加密新密码<br>3. 更新用户密码字段 |
-| `/auth/current-user` | GET | 获取当前用户信息 | 查询用户信息 | users | 根据JWT token中的用户ID查询用户信息 |
-| `/auth/reset-password` | PUT | 修改密码 | 更新用户密码 | users | 1. 验证旧密码<br>2. 加密新密码<br>3. 更新密码字段 |
-| `/auth/upload-picture` | POST | 上传头像 | 更新用户头像URL | users | 1. 上传图片到MinIO<br>2. 更新用户avatar字段 |
-| `/auth/reset-picture` | DELETE | 重置头像 | 更新用户头像为默认值 | users | 将用户avatar字段设为默认头像URL |
-| `/auth/logout` | POST | 退出登录 | Redis删除token | Redis | 将JWT token加入黑名单 |
-
-### 2. 文件夹管理模块 (ItemController)
-
-| 接口路径 | HTTP方法 | 功能描述 | 数据库操作 | 涉及表 | 业务逻辑 |
-|---------|---------|---------|-----------|--------|----------|
-| `/items/folders` | POST | 创建文件夹 | 插入文件夹记录 | folders | 1. 验证父文件夹存在性<br>2. 验证文件夹类型兼容性<br>3. 插入新文件夹记录 |
-| `/items/folders/{folder_id}` | GET | 获取文件夹内容 | 查询文件夹和文件信息 | folders, files, storages | 1. 异步查询文件夹信息<br>2. 异步查询文件列表<br>3. 关联存储信息获取文件大小<br>4. 支持排序和搜索 |
-| `/items/folders/{folder_id}` | PUT | 重命名文件夹 | 更新文件夹名称 | folders | 1. 验证文件夹所有权<br>2. 更新folder_name字段 |
-| `/items/folders/{folder_id}` | DELETE | 删除文件夹 | 软删除文件夹和其中文件 | folders, files | 1. 设置文件夹delete_time<br>2. 设置文件夹内所有文件delete_time |
-| `/items/files/{file_id}` | PUT | 重命名文件 | 更新文件名称 | files | 1. 验证文件所有权<br>2. 更新file_name字段 |
-| `/items/files/{file_id}` | DELETE | 删除文件 | 软删除文件 | files | 设置文件delete_time字段 |
-| `/items/set-order` | POST | 设置排序 | 更新排序字段 | folders, files | 1. 计算新的sorted_order值<br>2. 更新对应记录的排序字段 |
-| `/items/copy` | POST | 复制项目 | 复制文件/文件夹记录 | files, folders, storages, users | 1. 验证复制规则<br>2. 创建新的文件/文件夹记录<br>3. 更新存储引用计数<br>4. 更新用户存储使用量 |
-
-### 3. 音乐模块 (MusicController)
-
-| 接口路径 | HTTP方法 | 功能描述 | 数据库操作 | 涉及表 | 业务逻辑 |
-|---------|---------|---------|-----------|--------|----------|
-| `/music` | GET | 获取音乐页面信息 | 查询播放列表和音乐文件 | folders, files, music_metadata | 1. 异步查询playlist类型文件夹<br>2. 异步查询音乐文件<br>3. 关联音乐元数据<br>4. 支持搜索功能 |
-| `/music/{file_id}/play` | GET | 获取音乐播放URL | 查询文件和存储信息 | files, storages | 1. 验证文件所有权<br>2. 获取存储路径<br>3. 生成预签名URL |
-
-### 4. 文档模块 (DocumentController)
-
-| 接口路径 | HTTP方法 | 功能描述 | 数据库操作 | 涉及表 | 业务逻辑 |
-|---------|---------|---------|-----------|--------|----------|
-| `/documents` | GET | 获取文档页面信息 | 查询书单和文档文件 | folders, files | 1. 异步查询booklist类型文件夹<br>2. 异步查询文档文件<br>3. 支持搜索功能 |
-| `/documents/{file_id}/view` | GET | 获取文档预览链接 | 查询文件和存储信息 | files, storages | 1. 验证文件所有权<br>2. 获取存储路径<br>3. 生成预签名URL |
-| `/documents/md` | POST | 创建Markdown文档 | 插入文件和文档元数据 | files, document_metadata | 1. 创建文件记录<br>2. 创建文档元数据记录<br>3. 设置初始版本号 |
-| `/documents/md/{file_id}` | GET | 获取Markdown内容 | 查询文档元数据 | document_metadata | 根据文件ID查询Markdown内容和版本 |
-| `/documents/md/{file_id}` | PUT | 更新Markdown内容 | 更新文档元数据 | document_metadata | 1. 验证版本号（乐观锁）<br>2. 更新内容和版本号 |
-
-### 5. 回收站模块 (RecycleBinController)
-
-| 接口路径 | HTTP方法 | 功能描述 | 数据库操作 | 涉及表 | 业务逻辑 |
-|---------|---------|---------|-----------|--------|----------|
-| `/recycle-bin` | GET | 获取回收站内容 | 查询已删除的文件和文件夹 | files, folders | 1. 异步查询软删除的文件<br>2. 异步查询软删除的文件夹<br>3. 支持搜索功能 |
-| `/recycle-bin/restore` | POST | 恢复项目 | 清空删除时间 | files, folders | 1. 恢复选中的文件和文件夹<br>2. 恢复文件夹内的所有文件<br>3. 清空delete_time字段 |
-| `/recycle-bin/items` | DELETE | 永久删除选中项目 | 物理删除记录，更新引用计数 | files, folders, storages, users | 1. 计算释放的存储空间<br>2. 物理删除文件和文件夹记录<br>3. 减少存储引用计数<br>4. 更新用户存储使用量 |
-| `/recycle-bin/all` | DELETE | 清空回收站 | 物理删除所有已删除项目 | files, folders, storages, users | 1. 查询用户所有已删除项目<br>2. 批量物理删除<br>3. 更新存储引用计数<br>4. 更新用户存储使用量 |
-
-### 6. 文件上传模块 (UploadController)
-
-| 接口路径 | HTTP方法 | 功能描述 | 数据库操作 | 涉及表 | 业务逻辑 |
-|---------|---------|---------|-----------|--------|----------|
-| `/upload` | POST | 异步文件上传 | 插入文件和存储记录 | files, storages, users, transfer_log | 1. 计算文件哈希值<br>2. 检查是否已存在（秒传）<br>3. 上传到MinIO<br>4. 创建文件和存储记录<br>5. 更新用户存储使用量<br>6. 记录传输日志 |
-
-### 7. 分享模块 (ShareController)
-
-| 接口路径 | HTTP方法 | 功能描述 | 数据库操作 | 涉及表 | 业务逻辑 |
-|---------|---------|---------|-----------|--------|----------|
-| `/shares` | POST | 创建分享链接 | 插入分享记录 | share_links | 1. 生成唯一分享token<br>2. 加密分享密码<br>3. 创建分享记录 |
-| `/shares/verify` | POST | 验证分享链接 | 查询分享信息 | share_links, files, folders | 1. 验证分享token<br>2. 验证分享密码<br>3. 检查过期时间<br>4. 返回分享内容 |
-| `/shares/save` | POST | 保存分享内容 | 复制文件到用户空间 | files, storages, users | 1. 复制分享的文件<br>2. 更新存储引用计数<br>3. 更新用户存储使用量 |
-| `/shares/me` | GET | 获取我的分享记录 | 查询用户分享记录 | share_links, files, folders | 分页查询用户创建的分享记录 |
-| `/shares/{share_id}` | DELETE | 删除分享链接 | 删除分享记录 | share_links | 物理删除分享记录 |
-
-### 8. 专注模块 (FocusController)
-
-| 接口路径 | HTTP方法 | 功能描述 | 数据库操作 | 涉及表 | 业务逻辑 |
-|---------|---------|---------|-----------|--------|----------|
-| `/focus/records` | POST | 创建专注记录 | 插入专注记录，可能奖励岛屿 | user_focus_records, user_islands, Redis | 1. 创建专注记录<br>2. 执行签到逻辑（Redis Bitmap）<br>3. 执行奖励责任链<br>4. 可能获得岛屿奖励 |
-| `/focus/stats/total-count` | GET | 获取总专注次数 | 查询专注记录总数 | user_focus_records | 统计用户专注记录总数 |
-| `/focus/stats/records` | GET | 获取专注记录列表 | 分页查询专注记录 | user_focus_records | 分页查询用户专注记录 |
-| `/focus/stats/calendar` | GET | 获取专注日历数据 | 查询月度专注数据 | user_focus_records, Redis | 1. 查询月度专注时长<br>2. 获取签到日期（Redis Bitmap）<br>3. 返回日历数据 |
-
-### 9. 岛屿模块 (IslandController)
-
-| 接口路径 | HTTP方法 | 功能描述 | 数据库操作 | 涉及表 | 业务逻辑 |
-|---------|---------|---------|-----------|--------|----------|
-| `/islands/me` | GET | 获取我的岛屿收藏 | 查询用户岛屿记录 | user_islands | 查询用户已获得的岛屿URL列表 |
-
-### 10. 翻译模块 (TranslateController)
-
-| 接口路径 | HTTP方法 | 功能描述 | 数据库操作 | 涉及表 | 业务逻辑 |
-|---------|---------|---------|-----------|--------|----------|
-| `/translate` | POST | 文本翻译 | 无数据库操作 | 无 | 调用AI服务进行文本翻译 |
-
-### 11. 传输日志模块 (TransferController)
-
-| 接口路径 | HTTP方法 | 功能描述 | 数据库操作 | 涉及表 | 业务逻辑 |
-|---------|---------|---------|-----------|--------|----------|
-| `/transfer` | GET | 获取传输历史记录 | 查询传输日志 | transfer_log | 分页查询用户传输记录 |
-| `/transfer/summary` | GET | 获取传输统计摘要 | 统计传输数据 | transfer_log | 统计上传下载次数 |
-| `/transfer/{log_id}/status` | PUT | 更新传输状态 | 更新传输日志状态 | transfer_log | 更新传输任务状态和错误信息 |
-| `/transfer/{log_id}` | DELETE | 删除传输记录 | 软删除传输记录 | transfer_log, files, folders | 1. 软删除传输记录<br>2. 可选删除关联文件/文件夹 |
-| `/transfer/completed/clean` | DELETE | 清空已完成传输 | 批量删除传输记录 | transfer_log, files, folders | 批量清理已完成的传输记录 |
-| `/transfer/{log_id}/cancel` | POST | 取消上传任务 | 更新传输状态为取消 | transfer_log | 将上传任务状态设为已取消 |
-
----
-
-## 技术架构特点
-
-### 1. 数据库设计特性
-- **软删除机制**: 使用delete_time字段实现软删除，支持回收站功能
-- **引用计数**: storages表使用reference_count实现文件去重和垃圾回收
-- **存储配额管理**: users表管理用户存储空间配额和使用量
-- **版本控制**: document_metadata表实现Markdown文档的乐观锁版本控制
-- **层级结构**: folders表支持文件夹层级关系
-- **自定义排序**: 支持用户自定义文件和文件夹排序
-
-### 2. 性能优化
-- **异步处理**: 使用CompletableFuture实现异步查询
-- **批量操作**: 支持批量文件复制、删除等操作
-- **Redis缓存**: 使用Redis进行验证码缓存、签到数据存储
-- **虚拟线程池**: 使用虚拟线程提高并发性能
-
-### 3. 安全特性
-- **JWT认证**: 使用JWT token进行用户认证
-- **密码加密**: 使用BCrypt加密用户密码
-- **权限验证**: 所有操作都验证用户权限
-- **预签名URL**: 使用MinIO预签名URL安全访问文件
-
-### 4. 业务特色
-- **秒传功能**: 基于文件哈希值实现秒传
-- **专注奖励**: 专注功能结合岛屿奖励机制
-- **分享功能**: 支持文件和文件夹的公开分享
-- **传输日志**: 详细记录文件上传下载行为
-
-本文档涵盖了LiteIsle项目的所有前后端接口操作对应关系，为开发和维护提供了完整的参考资料。

@@ -89,7 +89,7 @@ CREATE TABLE `folders` (
                            `parent_id` bigint DEFAULT 0 COMMENT '父文件夹ID。值为0表示根目录下的文件夹',
                            `folder_name` varchar(255) NOT NULL COMMENT '文件夹在UI上显示的名称',
                            `folder_type` enum('system', 'playlist', 'booklist') NOT NULL COMMENT '只有 system, playlist, booklist 三类。',
-                           `sorted_order` decimal(30, 10) DEFAULT 0 COMMENT '用于用户自定义排序的浮点数值',
+                           `sorted_order` decimal(60, 30) DEFAULT 0 COMMENT '用于用户自定义排序的浮点数值',
                            `delete_time` timestamp NULL DEFAULT NULL COMMENT '软删除标记。非NULL表示已移入回收站',
                            `create_time` timestamp DEFAULT CURRENT_TIMESTAMP COMMENT '文件夹创建时间',
                            `update_time` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '文件夹最后更新时间（如重命名）',
@@ -111,7 +111,7 @@ CREATE TABLE `files` (
                          `file_extension` varchar(20) DEFAULT NULL COMMENT '文件扩展名，如 "mp3", "pdf", 用于前端显示',
                          `file_type` enum('music', 'document') NOT NULL COMMENT '文件的业务大类，用于甄别应关联哪个元数据表',
                          `file_status` enum('processing', 'available', 'failed') NOT NULL DEFAULT 'processing' COMMENT '文件状态。processing:后台处理中; available:完全可用; failed:处理失败',
-                         `sorted_order` decimal(30, 10) DEFAULT 0 COMMENT '用于用户自定义排序的浮点数值',
+                         `sorted_order` decimal(60, 30) DEFAULT 0 COMMENT '用于用户自定义排序的浮点数值',
                          `delete_time` timestamp NULL DEFAULT NULL COMMENT '软删除标记。非NULL表示已移入回收站',
                          `create_time` timestamp DEFAULT CURRENT_TIMESTAMP COMMENT '文件逻辑记录的创建时间',
                          `update_time` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '文件元数据的最后更新时间',
@@ -167,7 +167,7 @@ CREATE TABLE `share_links` (
                                `update_time` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '分享信息更新时间',
                                PRIMARY KEY (`id`),
                                UNIQUE KEY `uk_share_token` (`share_token`),
-                               CONSTRAINT `fk_share_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+                               CONSTRAINT `fk_share_user` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
                                CONSTRAINT `chk_share_target` CHECK ((`file_id` IS NOT NULL AND `folder_id` IS NULL) OR (`file_id` IS NULL AND `folder_id` IS NOT NULL))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理公开分享链接';
 
