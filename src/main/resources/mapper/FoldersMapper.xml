@@ -27,8 +27,9 @@
              FROM files file
              WHERE file.folder_id = f.id
                AND file.user_id = #{userId}
-               AND file.file_name LIKE CONCAT('%', #{content}, '%')
                AND file.delete_time IS NULL
+               AND file.file_status = 'available'
+               AND file.file_name LIKE CONCAT('%', #{content}, '%')
             ) AS subCount
         FROM folders f
         WHERE
@@ -46,6 +47,7 @@
                            ON f.id = file.folder_id
                                AND file.user_id = #{userId}
                                AND file.delete_time IS NULL
+                                AND file.file_status = 'available'
         WHERE
             f.user_id = #{userId}
           AND f.folder_type = #{type}

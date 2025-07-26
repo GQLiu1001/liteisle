@@ -64,11 +64,13 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
                 list = this.list(new LambdaQueryWrapper<Files>()
                         .eq(Files::getUserId, userId)
                         .eq(Files::getFileType, FileTypeEnum.DOCUMENT)
+                        .eq(Files::getFileStatus, FileStatusEnum.AVAILABLE)
                         .isNull(Files::getDeleteTime) // 过滤已删除文件
                 );
             } else {
                 list = this.list(new LambdaQueryWrapper<Files>()
                         .eq(Files::getUserId, userId)
+                        .eq(Files::getFileStatus, FileStatusEnum.AVAILABLE)
                         .like(Files::getFileName, content)
                         .isNull(Files::getDeleteTime) // 过滤已删除文件
                 );

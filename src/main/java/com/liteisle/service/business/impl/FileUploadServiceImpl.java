@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -160,16 +162,23 @@ public class FileUploadServiceImpl implements FileUploadService {
             throw new LiteisleException("无法读取上传文件内容");
         }
 
-        // 【关键修改】调用新的异步方法签名，传递字节数组和元数据，而不是MultipartFile
-        asyncFileProcessingCenter.processNewFile(
-                fileBytes,
-                file.getOriginalFilename(),
-                file.getSize(),
-                file.getContentType(), // 直接获取MIME类型
-                fileHash,
-                fileRecord.getId(),
-                logRecord.getId()
-        );
+        // 4. 【核心修复】注册一个事务同步回调，在当前事务成功提交后执行
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                // 这部分代码只会在外层 @Transactional 方法成功提交数据库事务后才会被调用
+                log.info("事务已提交，启动异步文件处理. FileId: {}, LogId: {}", fileRecord.getId(), logRecord.getId());
+                asyncFileProcessingCenter.processNewFile(
+                        fileBytes,
+                        file.getOriginalFilename(),
+                        file.getSize(),
+                        file.getContentType(),
+                        fileHash,
+                        fileRecord.getId(),
+                        logRecord.getId()
+                );
+            }
+        });
 
         log.info("新文件上传任务已启动, fileId: {}, logId: {}. 立即返回响应。", fileRecord.getId(), logRecord.getId());
 
