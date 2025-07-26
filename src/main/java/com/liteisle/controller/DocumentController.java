@@ -75,4 +75,15 @@ public class DocumentController {
         filesService.updateMarkdown(fileId, req);
         return Result.success();
     }
+
+    /**
+     * 获取MD文档版本号
+     */
+    @Operation(summary = "获取MD文档版本号", description = "获取MD文档版本号")
+    @GetMapping("/md-version/{file_id}")
+    public Result<Long> getMdVersion(
+            @PathVariable("file_id") Long fileId) {
+        Long version = filesService.getMdVersion(fileId);
+        return Result.success(version);
+    }
 }

@@ -97,4 +97,11 @@ public interface FilesService extends IService<Files> {
      * @return 父文件夹下所有文件的size大小
      */
     Long getFileTotalSizeFromFolderId(Long folderId,Long userId);
+
+    /**
+     * 获取MD文档版本号
+     * @param fileId md文件
+     * @return 版本号
+     */
+    Long getMdVersion(Long fileId);
 }

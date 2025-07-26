@@ -162,7 +162,6 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
         if (!Objects.equals(documentMetadata.getVersion(), req.getVersion())) {
             throw new LiteisleException("文件修改失败");
         }
-        documentMetadata.setVersion(documentMetadata.getVersion() + 1);
         boolean update = documentMetadataService.updateById(documentMetadata);
         if (!update) {
             throw new LiteisleException("更新文件元数据失败");
@@ -218,6 +217,17 @@ public class FilesServiceImpl extends ServiceImpl<FilesMapper, Files>
     @Override
     public Long getFileTotalSizeFromFolderId(Long folderId , Long userId) {
         return filesMapper.getTotalSizeByFolderId(folderId,userId);
+    }
+
+    @Override
+    public Long getMdVersion(Long fileId) {
+        DocumentMetadata one = documentMetadataService.getOne(new LambdaQueryWrapper<DocumentMetadata>()
+                .eq(DocumentMetadata::getFileId, fileId)
+                .select(DocumentMetadata::getVersion));
+        if (one == null){
+            throw new LiteisleException("获取MD文档版本号失败");
+        }
+        return one.getVersion();
     }
 
 
