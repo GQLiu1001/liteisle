@@ -1,5 +1,6 @@
 package com.liteisle.center;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.liteisle.common.domain.Files;
@@ -161,6 +162,7 @@ public class AsyncFileProcessingCenter {
      * - 此方法只负责加锁和解锁，不应有 @Transactional 注解。
      */
     @Async("virtualThreadPool")
+    @Transactional(rollbackFor = Exception.class)
     // 【关键修改 #2】移除这里的 @Transactional 注解！！！
     public void processNewFile(byte[] fileBytes, String originalFilename, long fileSize,
                                String mimeType, String fileHash, Long fileId, Long logId) {
@@ -199,13 +201,12 @@ public class AsyncFileProcessingCenter {
      * - 此方法必须是 public，以便代理能够拦截。
      * - 此方法必须有 @Transactional 注解。
      */
-    @Transactional(rollbackFor = Exception.class)
     public void processNewFileInTransaction(byte[] fileBytes, String originalFilename, long fileSize,
                                             String mimeType, String fileHash, Long fileId, Long logId) throws Exception {
         // 这里的内部逻辑是完全正确的，无需修改
         File tempFile = null;
         try {
-            Files fileRecord = filesService.getById(fileId);
+            Files fileRecord = filesService.getOne( new LambdaQueryWrapper<Files>().eq(Files::getId, fileId));
             if (fileRecord == null) throw new IllegalStateException("文件记录丢失: " + fileId);
             if (Objects.equals(fileRecord.getFileType(), FileTypeEnum.MUSIC)) {
                 tempFile = File.createTempFile("upload-", "-" + originalFilename);
