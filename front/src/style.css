@@ -1,0 +1,212 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-liteisle-card rounded-[40px] border border-liteisle-border p-6 transition-all duration-200 hover:shadow-md;
+    min-width: 280px;
+    width: 100%;
+    flex-shrink: 0;
+  }
+  
+  /* Electron 环境下的特殊处理 */
+  @media screen and (min-width: 1024px) and (max-width: 1400px) {
+    .card {
+      min-width: 300px;
+      max-width: none;
+    }
+    
+    /* 确保主容器在 Electron 中有足够的空间 */
+    .max-w-7xl {
+      max-width: 90%;
+    }
+  }
+  
+  /* 音乐页面响应式优化 */
+  @media screen and (max-width: 1024px) {
+    /* 移动端音乐页面优化 */
+    .music-grid {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 1rem !important;
+    }
+    
+    /* 移动端卡片优化 */
+    .card {
+      min-width: unset;
+      padding: 1rem;
+    }
+    
+    /* 音乐列表项间距调整 */
+    .music-item {
+      padding: 0.75rem !important;
+    }
+    
+    /* 音乐封面大小调整 */
+    .album-cover {
+      width: 2.5rem !important;
+      height: 2.5rem !important;
+    }
+  }
+
+  /* 中等屏幕优化 */
+  @media screen and (min-width: 1024px) and (max-width: 1279px) {
+    /* 调整音乐页面网格比例 */
+    .music-left-panel {
+      min-width: 250px;
+    }
+    
+    .music-center-panel {
+      flex: 1;
+      min-width: 400px;
+    }
+    
+    .music-right-panel {
+      min-width: 280px;
+    }
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-to-r from-gradient-start to-gradient-end text-white font-medium px-6 py-3 rounded-full transition-all duration-200 hover:shadow-lg hover:scale-105;
+  }
+  
+  .sidebar-item {
+    @apply flex flex-col items-center gap-1.5 lg:gap-2 px-3 py-3 lg:py-4 rounded-2xl transition-all duration-200 hover:bg-white/20 cursor-pointer text-morandi-800;
+  }
+  
+  .sidebar-item.active {
+    @apply bg-white/30 text-morandi-900;
+  }
+  
+  .sidebar-icon {
+    @apply w-6 h-6 lg:w-7 lg:h-7;
+  }
+  
+  .sidebar-text {
+    @apply text-xs lg:text-sm font-medium;
+  }
+  
+  /* 小屏幕下的侧边栏优化 */
+  @media screen and (max-height: 600px) {
+    .sidebar-item {
+      @apply px-2 py-2 gap-0.5;
+    }
+    
+    .sidebar-item span {
+      @apply text-[10px];
+    }
+    
+    /* logo 缩小 */
+    aside img {
+      @apply w-12 h-12;
+    }
+    
+    aside .pt-4 {
+      @apply pt-2;
+    }
+  }
+  
+  /* 极小屏幕下的侧边栏优化 */
+  @media screen and (max-height: 400px) {
+    .sidebar-item {
+      @apply px-2 py-1;
+    }
+    
+    .sidebar-item span {
+      @apply hidden;
+    }
+    
+    /* logo 进一步缩小 */
+    aside img {
+      @apply w-8 h-8;
+    }
+    
+    aside .pt-4 {
+      @apply pt-1;
+    }
+    
+    aside .pb-2 {
+      @apply pb-1;
+    }
+  }
+  
+  .topbar-control {
+    @apply w-8 h-8 rounded-md flex items-center justify-center transition-all duration-200 hover:bg-black/10 cursor-pointer;
+  }
+}
+
+@layer utilities {
+  @media (min-width: 768px) {
+      .my-toast-container {
+          margin-top: -20px !important;
+      }
+  }
+}
+
+/* 全局滚动条样式 - 与设置页面保持一致 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 针对所有具有滚动的元素 */
+.overflow-auto::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.overflow-auto::-webkit-scrollbar-track,
+.overflow-y-auto::-webkit-scrollbar-track,
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb,
+.overflow-y-auto::-webkit-scrollbar-thumb,
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb:hover,
+.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Firefox 滚动条样式 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}

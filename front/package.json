@@ -1,0 +1,94 @@
+{
+  "name": "liteisle-desktop",
+  "version": "1.0.0",
+  "description": "Liteisle Desktop - Vue 3 + Vite + Electron",
+  "author": "Liteisle Team",
+  "main": "main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode development",
+    "dev:prod": "vite --mode production",
+    "build": "vite build --mode electron",
+    "build:prod": "vite build --mode production",
+    "build:dev": "vite build --mode development",
+    "preview": "vite preview",
+    "electron": "wait-on tcp:5173 && electron . --dev",
+    "electron:serve": "concurrently -k \"npm run dev\" \"npm run electron\"",
+    "electron:pack": "npm run build && electron-builder",
+    "electron:dev": "vite build --mode electron && electron .",
+    "env:check": "node -e \"console.log('Environment variables:'); console.log(process.env);\""
+  },
+  "dependencies": {
+    "@iconify/vue": "^4.1.1",
+    "highlight.js": "^11.11.1",
+    "lucide-vue-next": "^0.525.0",
+    "markdown-it-anchor": "^9.2.0",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-sub": "^2.0.0",
+    "markdown-it-sup": "^2.0.0",
+    "pdfjs-dist": "^5.3.93",
+    "pinia": "^2.1.7",
+    "turndown": "^7.2.0",
+    "vditor": "^3.11.1",
+    "vue": "^3.4.15",
+    "vue-activity-calendar": "^1.2.2",
+    "vue-pdf-embed": "^2.1.2",
+    "vue-router": "^4.2.5",
+    "vue-toastification": "^2.0.0-rc.5",
+    "vuedraggable": "^4.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.7",
+    "@tailwindcss/typography": "^0.5.16",
+    "@types/highlight.js": "^9.12.4",
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^20.11.16",
+    "@vitejs/plugin-vue": "^5.0.3",
+    "autoprefixer": "^10.4.17",
+    "concurrently": "^8.2.2",
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "terser": "^5.43.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12",
+    "vue-tsc": "^1.8.27",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.liteisle.desktop",
+    "productName": "Liteisle Desktop",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "main.cjs",
+      "preload.js",
+      "package.json",
+      "public/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": "public/logopic.png",
+        "to": "logopic.png"
+      },
+      {
+        "from": "public/logopic.png",
+        "to": "public/logopic.png"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/logopic.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "asarUnpack": [
+      "public/**/*"
+    ]
+  }
+}
