@@ -24,16 +24,11 @@ import com.liteisle.util.CaptchaUtil;
 import com.liteisle.util.UserContextHolder;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.liteisle.common.constant.RedisConstant.SHARE_TOKEN_BLACKLIST_BLOOM;
@@ -60,7 +55,7 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
     @Resource
     private UsersService usersService;
     @Resource
-    private AsyncFileProcessingCenter asyncFileProcessingCenter;
+    private MusicMetadataService musicMetadataService;
     @Resource
     private TransferLogService transferLogService;
     @Resource
@@ -254,54 +249,65 @@ public class ShareLinksServiceImpl extends ServiceImpl<ShareLinksMapper, ShareLi
             throw new LiteisleException("你的存储空间不足，无法转存");
         }
 
-        // 5. **为所有待转存文件创建初始记录 (状态为 PROCESSING)**
-        List<Files> newFilesToSave = new ArrayList<>();
-        List<TransferLog> logsToUpdate = new ArrayList<>();
-
+        // 5. 【同步处理】直接在这里完成所有数据库操作
+        List<Files> savedFiles = new ArrayList<>();
         for (Files originalFile : originalFiles) {
-            // 创建 Files 记录
+            // 5.1 创建 Files 记录
             Files newFile = new Files();
             newFile.setUserId(receiverId);
             newFile.setFolderId(newParentFolderId);
             newFile.setFileName(originalFile.getFileName());
             newFile.setFileExtension(originalFile.getFileExtension());
             newFile.setFileType(originalFile.getFileType());
-            newFile.setFileStatus(FileStatusEnum.PROCESSING); // 初始状态
+            newFile.setFileStatus(FileStatusEnum.AVAILABLE); // 直接设为可用
+            newFile.setStorageId(originalFile.getStorageId()); // 直接关联StorageId
             newFile.setSortedOrder(BigDecimal.valueOf(System.currentTimeMillis()*100000));
             filesService.save(newFile);
-            newFilesToSave.add(newFile);
+            savedFiles.add(newFile); // 用于构造返回结果
 
-            // 创建 TransferLog 记录
+            // 5.2 更新 Storage 引用计数
+            storagesService.update(new UpdateWrapper<Storages>()
+                    .eq("id", originalFile.getStorageId())
+                    .setSql("reference_count = reference_count + 1"));
+
+            // 5.3 如果是音乐文件，复制元数据
+            if (Objects.equals(newFile.getFileType(), FileTypeEnum.MUSIC)) {
+                MusicMetadata originalMetadata = musicMetadataService.getById(originalFile.getId());
+                if (originalMetadata != null) {
+                    MusicMetadata newMetadata = new MusicMetadata();
+                    newMetadata.setFileId(newFile.getId());
+                    newMetadata.setArtist(originalMetadata.getArtist());
+                    newMetadata.setAlbum(originalMetadata.getAlbum());
+                    newMetadata.setDuration(originalMetadata.getDuration());
+                    musicMetadataService.save(newMetadata);
+                }
+            }
+
+            // 5.4 创建 TransferLog 记录
             TransferLog log = new TransferLog();
             log.setUserId(receiverId);
-            log.setTransferType(TransferTypeEnum.UPLOAD); // 转存可视为一种特殊的上传
+            log.setTransferType(TransferTypeEnum.UPLOAD);
             log.setItemName(originalFile.getFileName());
-            log.setFileId(originalFile.getId()); // 【注意】这里暂时存源文件ID，用于异步任务查找
+            log.setFileId(newFile.getId()); // 【注意】存新文件的ID
             log.setItemSize(storagesService.getById(originalFile.getStorageId()).getFileSize());
-            log.setLogStatus(TransferStatusEnum.PROCESSING);
+            log.setLogStatus(TransferStatusEnum.SUCCESS); // 直接设为成功
             transferLogService.save(log);
-            logsToUpdate.add(log);
         }
 
-        // 6. **触发异步任务**
-        asyncFileProcessingCenter.processSharedFilesSave
-                (sharerId, receiverId, newFilesToSave, logsToUpdate);
-
-        // 7. 更新接收者已用空间
+        // 6. 更新接收者已用空间 (逻辑不变)
         usersService.update(new UpdateWrapper<Users>()
                 .eq("id", receiverId)
                 .setSql("storage_used = storage_used + " + totalSizeToSave));
 
-        // 8. 构造并立即返回前端所需的数据
+        // 7. 构造并立即返回最终结果
         return new ShareSaveAsyncResp(
-                newFilesToSave.size(),
-                newFilesToSave.stream().map(f -> {
+                savedFiles.size(),
+                savedFiles.stream().map(f -> {
                     ShareSaveAsyncResp.InitialFileData initialData = new ShareSaveAsyncResp.InitialFileData();
-                    // ... 填充 initialData 的字段
                     initialData.setId(f.getId());
                     initialData.setName(f.getFileName());
                     initialData.setFileType(f.getFileType());
-                    initialData.setFileStatus(f.getFileStatus());
+                    initialData.setFileStatus(f.getFileStatus()); // 已经是 AVAILABLE
                     initialData.setCreateTime(f.getCreateTime());
                     initialData.setUpdateTime(f.getUpdateTime());
                     return initialData;
