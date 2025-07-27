@@ -1,0 +1,89 @@
+# LiteIsle Application Configuration Example
+# Copy this file to application.yaml and fill in your actual values
+
+spring:
+  profiles:
+    active: dev  # Change to 'prod' for production environment
+
+  application:
+    name: liteisle
+
+  # Database Configuration
+  datasource:
+    url: jdbc:mysql://localhost:3306/liteisle_db?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: your_db_username
+    password: your_db_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # Redis Configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 1
+      password: your_redis_password  # Remove this line if no password is set
+
+  # JSON Property Naming Strategy
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+  # Email Configuration
+  mail:
+    host: smtp.your-email-provider.com  # e.g., smtp.gmail.com, smtp.163.com
+    port: 465  # Use 587 for TLS, 465 for SSL
+    username: your-email@example.com
+    password: your_email_password_or_app_password  # Use app password for Gmail
+    properties:
+      mail:
+        smtp:
+          ssl:
+            enable: true  # Set to false if using TLS on port 587
+          auth: true
+
+  # File Upload Configuration
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+  # AI Integration (Alibaba Dashscope)
+  ai:
+    dashscope:
+      api-key: your_dashscope_api_key
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      chat:
+        options:
+          model: qwen-max-latest
+
+# MyBatis Plus Configuration
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+# MinIO Object Storage Configuration
+minio:
+  endpoint: http://localhost:9000  # Your MinIO server endpoint
+  access-key: your_minio_access_key
+  secret-key: your_minio_secret_key
+  bucket: liteisle-bucket
+
+# FFmpeg Configuration (for media processing)
+ffmpeg:
+  path: ffmpeg  # Path to ffmpeg executable, or just 'ffmpeg' if in PATH
+
+# JWT Configuration
+jwt:
+  secret: "your-super-secret-jwt-key-that-is-at-least-32-characters-long"
+  expiration:
+    access-token: 30d  # Token expiration time (e.g., 30d, 24h, 60m)
+
+# Server Configuration
+server:
+  port: 8002  # Application port
