@@ -7,7 +7,7 @@ import com.liteisle.common.domain.Files;
 import com.liteisle.common.domain.MusicMetadata;
 import com.liteisle.common.domain.Storages;
 import com.liteisle.common.domain.TransferLog;
-import com.liteisle.common.dto.websocket.ShareSaveCompletedMessage;
+import com.liteisle.common.domain.Users;
 import com.liteisle.common.enums.FileStatusEnum;
 import com.liteisle.common.enums.FileTypeEnum;
 import com.liteisle.common.enums.TransferStatusEnum;
@@ -15,6 +15,7 @@ import com.liteisle.service.core.FilesService;
 import com.liteisle.service.core.MusicMetadataService;
 import com.liteisle.service.core.StoragesService;
 import com.liteisle.service.core.TransferLogService;
+import com.liteisle.service.core.UsersService;
 import com.liteisle.util.FFmpegUtil;
 import com.liteisle.util.MinioUtil;
 import com.liteisle.service.business.WebSocketService;
@@ -27,11 +28,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +55,8 @@ public class AsyncFileProcessingCenter {
     @Resource
     private TransferLogService transferLogService;
     @Resource
+    private UsersService usersService;
+    @Resource
     private WebSocketService webSocketService;
     @Resource
     private RedissonClient redissonClient;
@@ -69,7 +70,7 @@ public class AsyncFileProcessingCenter {
      * - 此方法只负责加锁和解锁，不应有 @Transactional 注解。
      */
     @Async("virtualThreadPool")
-    public void processNewFile(byte[] fileBytes, String originalFilename, long fileSize,
+    public void processNewFile(Path stagedFile, String originalFilename, long fileSize,
                                String mimeType, String fileHash, Long fileId, Long logId) {
 
         String lockKey = FILE_HASH_LOCK_PREFIX + fileHash;
@@ -80,7 +81,7 @@ public class AsyncFileProcessingCenter {
             if (isLocked) {
                 try {
                     // 【关键修改 #3】使用 self (代理对象) 来调用事务方法
-                    self.processNewFileInTransaction(fileBytes, originalFilename, fileSize, mimeType, fileHash, fileId, logId);
+                    self.processNewFileInTransaction(stagedFile, originalFilename, fileSize, mimeType, fileHash, fileId, logId);
                 } catch (Exception e) {
                     log.error("文件处理事务执行失败. FileId: {}, LogId: {}", fileId, logId, e);
                     handleFailure(fileId, logId, e);
@@ -97,6 +98,8 @@ public class AsyncFileProcessingCenter {
             log.error("获取 Redisson 锁时被中断", e);
             handleFailure(fileId, logId, e);
             Thread.currentThread().interrupt();
+        } finally {
+            deleteStagedFile(stagedFile);
         }
     }
 
@@ -107,57 +110,50 @@ public class AsyncFileProcessingCenter {
      * - 此方法必须有 @Transactional 注解。
      */
     @Transactional(rollbackFor = Exception.class)
-    public void processNewFileInTransaction(byte[] fileBytes, String originalFilename, long fileSize,
+    public void processNewFileInTransaction(Path stagedFile, String originalFilename, long fileSize,
                                             String mimeType, String fileHash, Long fileId, Long logId) throws Exception {
-        // 这里的内部逻辑是完全正确的，无需修改
-        File tempFile = null;
-        try {
-            Files fileRecord = filesService.getOne( new LambdaQueryWrapper<Files>().eq(Files::getId, fileId));
-            if (fileRecord == null) throw new IllegalStateException("文件记录丢失: " + fileId);
-            if (Objects.equals(fileRecord.getFileType(), FileTypeEnum.MUSIC)) {
-                tempFile = File.createTempFile("upload-", "-" + originalFilename);
-                try (FileOutputStream fos = new FileOutputStream(tempFile)) { fos.write(fileBytes); }
-            }
+        Files fileRecord = filesService.getOne(new LambdaQueryWrapper<Files>().eq(Files::getId, fileId));
+        if (fileRecord == null) throw new IllegalStateException("文件记录丢失: " + fileId);
+        if (stagedFile == null || !java.nio.file.Files.exists(stagedFile)) {
+            throw new IllegalStateException("上传临时文件丢失: " + stagedFile);
+        }
 
-            String storagePath = DATA_BUCKET_PREFIX + fileHash.substring(0, 2) + "/" + fileHash.substring(2, 4) + "/" + fileHash;
-            if (!minioUtil.objectExists(storagePath)) {
-                minioUtil.uploadFile(new ByteArrayInputStream(fileBytes), fileSize, storagePath, mimeType);
-            }
-
-            Storages existingStorage = storagesService.getOne(new QueryWrapper<Storages>().eq("file_hash", fileHash));
-            Storages storageToUse;
-            if (existingStorage != null) {
-                storagesService.update(new UpdateWrapper<Storages>().eq("id", existingStorage.getId()).setSql("reference_count = reference_count + 1"));
-                storageToUse = existingStorage;
-            } else {
-                Storages newStorage = new Storages();
-                newStorage.setFileHash(fileHash);
-                newStorage.setFileSize(fileSize);
-                newStorage.setMimeType(mimeType);
-                newStorage.setStoragePath(storagePath);
-                newStorage.setReferenceCount(1);
-                storagesService.save(newStorage);
-                storageToUse = newStorage;
-            }
-
-            fileRecord.setStorageId(storageToUse.getId());
-            if (Objects.equals(fileRecord.getFileType(), FileTypeEnum.MUSIC) && tempFile != null) {
-                handleMusicMetadata(tempFile.getAbsolutePath(), fileId);
-            }
-
-            fileRecord.setFileStatus(FileStatusEnum.AVAILABLE);
-            filesService.updateById(fileRecord);
-            updateTransferLog(logId, TransferStatusEnum.SUCCESS, null);
-
-            log.info("文件处理成功. FileId: {}, LogId: {}", fileId, logId);
-            webSocketService.sendFileStatusUpdate(
-                    fileRecord.getUserId(), fileId, logId, FileStatusEnum.AVAILABLE, TransferStatusEnum.SUCCESS, fileRecord.getFileName(), null, 100
-            );
-        } finally {
-            if (tempFile != null && tempFile.exists() && !tempFile.delete()) {
-                log.warn("临时文件删除失败: {}", tempFile.getAbsolutePath());
+        String storagePath = DATA_BUCKET_PREFIX + fileHash.substring(0, 2) + "/" + fileHash.substring(2, 4) + "/" + fileHash;
+        if (!minioUtil.objectExists(storagePath)) {
+            try (InputStream inputStream = java.nio.file.Files.newInputStream(stagedFile)) {
+                minioUtil.uploadFile(inputStream, fileSize, storagePath, mimeType);
             }
         }
+
+        Storages existingStorage = storagesService.getOne(new QueryWrapper<Storages>().eq("file_hash", fileHash));
+        Storages storageToUse;
+        if (existingStorage != null) {
+            storagesService.update(new UpdateWrapper<Storages>().eq("id", existingStorage.getId()).setSql("reference_count = reference_count + 1"));
+            storageToUse = existingStorage;
+        } else {
+            Storages newStorage = new Storages();
+            newStorage.setFileHash(fileHash);
+            newStorage.setFileSize(fileSize);
+            newStorage.setMimeType(mimeType);
+            newStorage.setStoragePath(storagePath);
+            newStorage.setReferenceCount(1);
+            storagesService.save(newStorage);
+            storageToUse = newStorage;
+        }
+
+        fileRecord.setStorageId(storageToUse.getId());
+        if (Objects.equals(fileRecord.getFileType(), FileTypeEnum.MUSIC)) {
+            handleMusicMetadata(stagedFile.toAbsolutePath().toString(), fileId);
+        }
+
+        fileRecord.setFileStatus(FileStatusEnum.AVAILABLE);
+        filesService.updateById(fileRecord);
+        updateTransferLog(logId, TransferStatusEnum.SUCCESS, null);
+
+        log.info("文件处理成功. FileId: {}, LogId: {}", fileId, logId);
+        webSocketService.sendFileStatusUpdate(
+                fileRecord.getUserId(), fileId, logId, FileStatusEnum.AVAILABLE, TransferStatusEnum.SUCCESS, fileRecord.getFileName(), null, 100
+        );
     }
 
     /**
@@ -167,6 +163,7 @@ public class AsyncFileProcessingCenter {
         updateFileStatus(fileId, FileStatusEnum.FAILED);
         updateTransferLog(logId, TransferStatusEnum.FAILED, e.getMessage());
         Files fileRecord = filesService.getById(fileId);
+        restoreUserStorageForFailedUpload(fileRecord, logId);
         if (fileRecord != null) {
             webSocketService.sendFileStatusUpdate(
                     fileRecord.getUserId(), fileId, logId, FileStatusEnum.FAILED, TransferStatusEnum.FAILED, fileRecord.getFileName(), e.getMessage(), 0
@@ -203,5 +200,29 @@ public class AsyncFileProcessingCenter {
             log.setErrorMessage(errorMessage);
         }
         transferLogService.updateById(log);
+    }
+
+    private void restoreUserStorageForFailedUpload(Files fileRecord, Long logId) {
+        if (fileRecord == null || fileRecord.getUserId() == null || fileRecord.getStorageId() != null) {
+            return;
+        }
+        TransferLog transferLog = transferLogService.getById(logId);
+        if (transferLog == null || transferLog.getItemSize() == null || transferLog.getItemSize() <= 0) {
+            return;
+        }
+        usersService.update(new UpdateWrapper<Users>()
+                .eq("id", fileRecord.getUserId())
+                .setSql("storage_used = GREATEST(0, storage_used - " + transferLog.getItemSize() + ")"));
+    }
+
+    private void deleteStagedFile(Path stagedFile) {
+        if (stagedFile == null) {
+            return;
+        }
+        try {
+            java.nio.file.Files.deleteIfExists(stagedFile);
+        } catch (IOException e) {
+            log.warn("删除上传临时文件失败: {}", stagedFile, e);
+        }
     }
 }
